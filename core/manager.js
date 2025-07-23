@@ -1,6 +1,6 @@
 import { TTable } from "./tTableManager.js";
 import applicationFunctionManager from "../services/appFuncManager.js";
-// 移除旧表格系统引用
+// Remove old table system reference
 import { consoleMessageToEditor } from "../scripts/settings/devConsole.js";
 import { calculateStringHash, generateRandomNumber, generateRandomString, lazy, readonly, } from "../utils/utility.js";
 import { defaultSettings } from "../data/pluginSetting.js";
@@ -22,9 +22,9 @@ let derivedData = {}
 export const APP = applicationFunctionManager
 
 /**
- * @description `USER` 用户数据管理器
- * @description 该管理器用于管理用户的设置、上下文、聊天记录等数据
- * @description 请注意，用户数据应该通过该管理器提供的方法进行访问，而不应该直接访问用户数据
+ * @description `USER` User Data Manager
+ * @description This manager is used to manage user settings, context, chat history, and other data.
+ * @description Please note that user data should be accessed through the methods provided by this manager, and should not be accessed directly.
  */
 export const USER = {
     getSettings: () => APP.power_user,
@@ -48,7 +48,7 @@ export const USER = {
         while (chat[index].is_user === true) {
             if(direction === 'up')index--
             else index++
-            if (!chat[index]) return {piece: null, deep: -1}; // 如果没有找到非用户消息，则返回null
+            if (!chat[index]) return {piece: null, deep: -1}; // If no non-user message is found, return null
         }
         return {piece:chat[index], deep: index};
     },
@@ -59,7 +59,7 @@ export const USER = {
             USER.getSettings().table_database_templates = templates;
             USER.saveSettings();
         }
-        console.log("全局模板", templates)
+        console.log("Global templates", templates)
         return templates;
     },
     tableBaseSetting: createProxyWithUserSetting('muyoo_dataTable'),
@@ -69,15 +69,15 @@ export const USER = {
 
 
 /**
- * @description `BASE` 数据库基础数据管理器
- * @description 该管理器提供了对库的用户数据、模板数据的访问，但不提供对数据的修改
- * @description 请注意，对库的操作应通过 `BASE.object()` 创建 `Sheet` 实例进行，任何对库的编辑都不应该直接暴露到该管理器中
+ * @description `BASE` Database Base Data Manager
+ * @description This manager provides access to the library's user data and template data, but does not provide data modification.
+ * @description Please note that library operations should be performed by creating `Sheet` instances through `BASE.object()`, and any library editing should not be directly exposed to this manager.
  */
 export const BASE = {
     /**
-     * @description `Sheet` 数据表单实例
-     * @description 该实例用于对数据库的数据进行访问、修改、查询等操作
-     * @description 请注意，对数据库的任何操作都应该通过该实例进行，而不应该直接访问数据库
+     * @description `Sheet` Data Form Instance
+     * @description This instance is used to access, modify, query, and perform other operations on the database's data.
+     * @description Please note that any operations on the database should be performed through this instance, and the database should not be accessed directly.
      */
     Sheet: TTable.Sheet,
     SheetTemplate: TTable.Template,
@@ -189,14 +189,14 @@ export const BASE = {
         if(type === 'data') return BASE.saveChatSheets()
         const oldSheets = BASE.getChatSheets().filter(sheet => !newSheets.some(newSheet => newSheet.uid === sheet.uid))
         oldSheets.forEach(sheet => sheet.enable = false)
-        console.log("应用表格数据", newSheets, oldSheets)
+        console.log("Applying table data", newSheets, oldSheets)
         const mergedSheets = [...newSheets, ...oldSheets]
         BASE.reSaveAllChatSheets(mergedSheets)
     },
     saveChatSheets(saveToPiece = true) {
         if(saveToPiece){
             const {piece} = USER.getChatPiece()
-            if(!piece) return EDITOR.error("没有记录载体，表格是保存在聊天记录中的，请聊至少一轮后再重试")
+            if(!piece) return EDITOR.error("No record carrier, the table is saved in the chat history, please try again after at least one round of chat")
             BASE.getChatSheets(sheet => sheet.save(piece, true))
         }else BASE.getChatSheets(sheet => sheet.save(undefined, true))
         USER.saveChat()
@@ -204,7 +204,7 @@ export const BASE = {
     reSaveAllChatSheets(sheets) {
         BASE.sheetsData.context = []
         const {piece} = USER.getChatPiece()
-        if(!piece) return EDITOR.error("没有记录载体，表格是保存在聊天记录中的，请聊至少一轮后再重试")
+        if(!piece) return EDITOR.error("No record carrier, the table is saved in the chat history, please try again after at least one round of chat")
         sheets.forEach(sheet => {
             sheet.save(piece, true)
         })
@@ -216,8 +216,8 @@ export const BASE = {
         updateSelectBySheetStatus()
     },
     getLastSheetsPiece(deep = 0, cutoff = 1000, deepStartAtLastest = true, direction = 'up') {
-        console.log("向上查询表格数据，深度", deep, "截断", cutoff, "从最新开始", deepStartAtLastest)
-        // 如果没有找到新系统的表格数据，则尝试查找旧系统的表格数据（兼容模式）
+        console.log("Querying table data upwards, depth", deep, "cutoff", cutoff, "from latest", deepStartAtLastest)
+        // If no new system table data is found, try to find old system table data (compatibility mode)
         const chat = APP.getContext().chat
         if (!chat || chat.length === 0 || chat.length <= deep) {
             return { deep: -1, piece: BASE.initHashSheet() }
@@ -226,16 +226,16 @@ export const BASE = {
         for (let i = startIndex;
             direction === 'up' ? (i >= 0 && i >= startIndex - cutoff) : (i < chat.length && i < startIndex + cutoff);
             direction === 'up' ? i-- : i++) {
-            if (chat[i].is_user === true) continue; // 跳过用户消息
+            if (chat[i].is_user === true) continue; // Skip user messages
             if (chat[i].hash_sheets) {
-                console.log("向上查询表格数据，找到表格数据", chat[i])
+                console.log("Found table data by querying upwards", chat[i])
                 return { deep: i, piece: chat[i] }
             }
-            // 如果没有找到新系统的表格数据，则尝试查找旧系统的表格数据（兼容模式）
-            // 请注意不再使用旧的Table类
+            // If no new system table data is found, try to find old system table data (compatibility mode)
+            // Please note that the old Table class is no longer used
             if (chat[i].dataTable) {
-                // 为了兼容旧系统，将旧数据转换为新的Sheet格式
-                console.log("找到旧表格数据", chat[i])
+                // To be compatible with the old system, convert the old data to the new Sheet format
+                console.log("Found old table data", chat[i])
                 convertOldTablesToNewSheets(chat[i].dataTable, chat[i])
                 return { deep: i, piece: chat[i] }
             }
@@ -244,7 +244,7 @@ export const BASE = {
     },
     getReferencePiece(){
         const swipeInfo = USER.isSwipe()
-        console.log("获取参考片段", swipeInfo)
+        console.log("Getting reference piece", swipeInfo)
         const {piece} = swipeInfo.isSwipe?swipeInfo.deep===-1?{piece:BASE.initHashSheet()}: BASE.getLastSheetsPiece(swipeInfo.deep-1,1000,false):BASE.getLastSheetsPiece()
         return piece
     },
@@ -265,11 +265,11 @@ export const BASE = {
     },
     initHashSheet() {
         if (BASE.sheetsData.context.length === 0) {
-            console.log("尝试从模板中构建表格数据")
+            console.log("Trying to build table data from template")
             const {piece: currentPiece} = USER.getChatPiece()
             buildSheetsByTemplates(currentPiece)
             if (currentPiece?.hash_sheets) {
-                // console.log('使用模板创建了新的表格数据', currentPiece)
+                // console.log('New table data created using template', currentPiece)
                 return currentPiece
             }
         }
@@ -283,9 +283,9 @@ export const BASE = {
 
 
 /**
- * @description `Editor` 编辑器控制器
- * @description 该控制器用于管理编辑器的状态、事件、设置等数据，包括鼠标位置、聚焦面板、悬停面板、活动面板等
- * @description 编辑器自身数据应相对于其他数据相互独立，对于修改编辑器自身数据不会影响派生数据和用户数据，反之亦然
+ * @description `Editor` Editor Controller
+ * @description This controller is used to manage the editor's state, events, settings, and other data, including mouse position, focused panel, hovered panel, active panel, etc.
+ * @description The editor's own data should be independent of other data. Modifying the editor's own data will not affect derived data and user data, and vice versa.
  * */
 export const EDITOR = {
     Drag: Drag,
@@ -301,7 +301,7 @@ export const EDITOR = {
         try {
             return cb(...args);
         } catch (e) {
-            EDITOR.error(errorMsg ?? '执行代码块失败', e.message, e);
+            EDITOR.error(errorMsg ?? 'Failed to execute code block', e.message, e);
             return null;
         }
     },
@@ -326,21 +326,21 @@ export const EDITOR = {
 
 
 /**
- * @description `DerivedData` 项目派生数据管理器
- * @description 该管理器用于管理运行时的派生数据，包括但不限于中间用户数据、系统数据、库数据等
- * @description 请注意，敏感数据不能使用该派生数据管理器进行存储或中转
+ * @description `DerivedData` Project Derived Data Manager
+ * @description This manager is used to manage derived data at runtime, including but not limited to intermediate user data, system data, library data, etc.
+ * @description Please note that sensitive data cannot be stored or transferred using this derived data manager.
  * */
 export const DERIVED = {
     get any() {
         return createProxy(derivedData);
     },
-    // 移除旧的Table类引用，使用新的Sheet和SheetTemplate类
+    // Remove old Table class reference, use new Sheet and SheetTemplate classes
 };
 
 
 /**
- * @description `SYSTEM` 系统控制器
- * @description 该控制器用于管理系统级别的数据、事件、设置等数据，包括组件加载、文件读写、代码路径记录等
+ * @description `SYSTEM` System Controller
+ * @description This controller is used to manage system-level data, events, settings, etc., including component loading, file reading and writing, code path recording, etc.
  */
 export const SYSTEM = {
     getTemplate: (name) => {

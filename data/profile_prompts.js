@@ -703,7 +703,6 @@ Example of response format. Again, respond directly in the following format, wit
 //         }]
 //     8. Emphasis: delete operation does not include "data", insert operation does not include "rowIndex".
 //     9. Emphasis: tableIndex and rowIndex values are numbers, not enclosed in double quotes, e.g., 0 not "0".
-
 // <Correct Response Example>
 //     [
 //         {
