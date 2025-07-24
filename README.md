@@ -69,13 +69,13 @@ The Memory Enhancement Plugin injects powerful **structured long-term memory** i
 1.  **Install Plugin:** On the SillyTavern page, click `Extensions` > `Install Extension`.
 
     <p align="center">
-        <img src="https://github.com/user-attachments/assets/67904e14-dc8d-4d7c-a1a8-d24253b72621" alt="Install Plugin Step 1" style="max-width:70%; border-radius: 5px;">
+        <img src="assets\install2.jpg" alt="Install Plugin Step 1" style="max-width:70%; border-radius: 5px;">
     </p>
 
 2.  **Enter Plugin Address:** In the pop-up window, enter the plugin's GitHub address `https://github.com/muyoou/st-memory-enhancement`, then select `Install for all users`.
 
     <p align="center">
-        <img src="https://github.com/user-attachments/assets/9f39015f-63bb-4741-bb7f-740c02f1de17" alt="Install Plugin Step 2" style="max-width:70%; border-radius: 5px;">
+        <img src="assets\install3.jpg" alt="Install Plugin Step 2" style="max-width:70%; border-radius: 5px;">
     </p>
 
     **Acceleration for users in China:** If you encounter network issues, you can try the domestic Gitee source address: `https://gitee.com/muyoou/st-memory-enhancement`
