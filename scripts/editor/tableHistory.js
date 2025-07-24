@@ -27,7 +27,7 @@ const histories = `
     z-index: 999;
 }
 
-/* 使.history-tabs的滚动条显示在上方 */
+/* Make the scrollbar of .history-tabs display at the top */
 .history-tabs::-webkit-scrollbar {
 
 }
@@ -65,7 +65,7 @@ const histories = `
 .history-cell-list {
     overflow-y: auto;
     width: 100%;
-    /* 防止内容跳动 */
+    /* Prevent content from jumping */
     will-change: transform;
     transform: translateZ(0);
 }
@@ -106,20 +106,20 @@ const histories = `
 }
 </style>
 <div class="table-history">
-    <h3>表格单元格历史记录</h3>
+    <h3>Table Cell History</h3>
     <div class="history-tabs">
-        <!-- 动态生成tabs -->
+        <!-- Dynamically generate tabs -->
     </div>
     <div class="table-history-content">
         <div class="history-sheets-content">
-            <!-- 动态生成的表格历史记录内容 -->
+            <!-- Dynamically generated table history content -->
         </div>
     </div>
 </div>
 `
 
 function scrollToBottom(container) {
-    // 在弹窗显示后滚动到底部
+    // Scroll to the bottom after the popup is displayed
     const contentContainer = $(container).find('.table-history-content');
     contentContainer.scrollTop(contentContainer[0].scrollHeight);
 }
@@ -129,44 +129,44 @@ async function updateTableHistoryData(container) {
     const sheetsData = BASE.getChatSheets();
     if (!piece || !piece.hash_sheets) return;
 
-    // 获取内容容器
+    // Get content container
     const contentContainer = $(container).find('.table-history-content');
     const tabsContainer = $(container).find('.history-tabs');
     const sheetsContainer = $(contentContainer).find('.history-sheets-content');
 
-    // 清空现有内容
+    // Clear existing content
     tabsContainer.empty();
     sheetsContainer.empty();
 
-    // 如果没有表格数据，显示提示
+    // If there is no table data, display a prompt
     if (!sheetsData || sheetsData.length === 0) {
-        sheetsContainer.append('<div class="history-empty">没有可显示的历史数据</div>');
+        sheetsContainer.append('<div class="history-empty">No history data to display</div>');
         return;
     }
 
-    // 有效的表格计数（用于处理首个激活标签）
+    // Valid table count (for handling the first active tab)
     let validSheetCount = 0;
 
-    // 遍历所有表格
+    // Iterate through all tables
     sheetsData.forEach((sheetData, index) => {
         if (!sheetData.cellHistory || sheetData.cellHistory.length === 0) return;
 
-        const sheetName = sheetData.name || `表格${index + 1}`;
+        const sheetName = sheetData.name || `Table${index + 1}`;
         const sheetId = `history-sheet-${index}`;
         validSheetCount++;
 
-        // 创建Tab
+        // Create Tab
         const tab = $(`<div class="history-tab" data-target="${sheetId}">#${index} ${sheetName}</div>`);
         if (validSheetCount === 1) {
             tab.addClass('active');
         }
         tabsContainer.append(tab);
 
-        // 创建表格内容区域
+        // Create table content area
         const sheetContainer = $(`<div id="${sheetId}" class="history-sheet-container ${validSheetCount === 1 ? 'active' : ''}"></div>`);
         const cellListContainer = $('<div class="history-cell-list"></div>');
 
-        // 计数有效的历史记录数量
+        // Count valid history records
         let validHistoryCount = 0;
 
         sheetData.cellHistory.forEach(cell => {
@@ -174,27 +174,27 @@ async function updateTableHistoryData(container) {
             const [rowIndex, colIndex] = cellInstance.position;
             // console.log(rowIndex, colIndex, cellInstance);
 
-            // 只显示有值的单元格
+            // Only display cells with values
             if (!cell.data || !cell.data.value) return;
 
-            // // 跳过第一行第一列（表格原始单元格）
+            // // Skip the first row and first column (table source cell)
             // if (rowIndex === 0 && colIndex === 0) return;
 
-            // 创建位置显示
+            // Create position display
             const positionDisplay = () => {
                 if (rowIndex === 0 && colIndex === 0) {
-                    return `<span style="color: var(--SmartThemeEmColor);">表格源</span>`;
+                    return `<span style="color: var(--SmartThemeEmColor);">Table Source</span>`;
                 } else if (rowIndex === 0) {
-                    return `列 <span style="color: var(--SmartThemeQuoteColor);">${colIndex}</span>`;
+                    return `Column <span style="color: var(--SmartThemeQuoteColor);">${colIndex}</span>`;
                 } else if (colIndex === 0) {
-                    return `行 <span style="color: var(--SmartThemeQuoteColor);">${rowIndex}</span>`;
+                    return `Row <span style="color: var(--SmartThemeQuoteColor);">${rowIndex}</span>`;
                 } else if (rowIndex > 0 && colIndex > 0) {
                     return `<span style="color: #4C8BF5;">${getColumnLetter(colIndex-1)}</span><span style="color: #34A853;">${rowIndex}</span>`;
                 }
-                return '<span style="color: #EA4335;">旧数据</span>';
+                return '<span style="color: #EA4335;">Old Data</span>';
             }
 
-            // 创建历史条目
+            // Create history entry
             const historyItem = $('<div class="history-cell-item"></div>');
             const positionElement = $(`<div class="history-cell-position">${positionDisplay()}</div>`);
             const valueElement = $(`<div class="history-cell-value">${cell.data.value}</div>`);
@@ -208,38 +208,38 @@ async function updateTableHistoryData(container) {
             validHistoryCount++;
         });
 
-        // 如果没有历史条目，显示提示
+        // If there are no history entries, display a prompt
         if (validHistoryCount === 0) {
-            cellListContainer.append('<div class="history-empty">此表格没有历史数据</div>');
+            cellListContainer.append('<div class="history-empty">This table has no historical data</div>');
         }
 
         sheetContainer.append(cellListContainer);
         sheetsContainer.append(sheetContainer);
     });
 
-    // 如果没有任何表格有历史数据，显示提示
+    // If no tables have historical data, display a prompt
     if (validSheetCount === 0) {
-        sheetsContainer.append('<div class="history-empty">没有可显示的历史数据</div>');
+        sheetsContainer.append('<div class="history-empty">No history data to display</div>');
     }
 
-    // 添加标签切换事件
+    // Add tab switch event
     tabsContainer.find('.history-tab').on('click', function() {
-        // 移除所有活跃状态
+        // Remove all active states
         tabsContainer.find('.history-tab').removeClass('active');
         sheetsContainer.find('.history-sheet-container').removeClass('active');
 
-        // 添加当前项的活跃状态
+        // Add active state to the current item
         $(this).addClass('active');
         const targetId = $(this).data('target');
         $(`#${targetId}`).addClass('active');
 
-        // 滚动内容区域到底部
+        // Scroll the content area to the bottom
         scrollToBottom(container);
     });
 }
 
 /**
- * 打开表格编辑历史记录弹窗
+ * Open the table edit history popup
  * */
 export async function openTableHistoryPopup(){
     const tableHistoryPopup = new EDITOR.Popup(histories, EDITOR.POPUP_TYPE.TEXT, '', { large: true, wide: true, allowVerticalScrolling: false });

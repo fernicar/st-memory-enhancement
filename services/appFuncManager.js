@@ -9,11 +9,11 @@ import { getCurrentLocale } from '/scripts/i18n.js';
 
 
 /**
- * appManager 对象，用于集中管理和暴露常用的应用程序功能和库。
- * 方便在应用程序的不同模块中统一访问和使用这些功能。
+ * appManager object, used to centrally manage and expose commonly used application functions and libraries.
+ * Convenient for unified access and use of these functions in different modules of the application.
  */
 const applicationFunctionManager = {
-    // script.js 模块
+    // script.js module
     saveSettingsDebounced,
     saveSettings,
     getSlideToggleOptions,
@@ -23,53 +23,53 @@ const applicationFunctionManager = {
     event_types,
     getRequestHeaders,
 
-    // lib.js 模块
+    // lib.js module
     DOMPurify,
     Bowser,
     slideToggle,
 
-    // scripts/extensions.js 模块
+    // scripts/extensions.js module
     extension_settings,
     getContext,
     renderExtensionTemplateAsync,
 
-    // scripts/popup.js 模块
+    // scripts/popup.js module
     POPUP_TYPE,
     Popup,
     callGenericPopup,
 
-    // scripts/power-user.js 模块
+    // scripts/power-user.js module
     power_user,
     applyPowerUserSettings,
     getContextSettings,
     loadPowerUserSettings,
 
-    // scripts/f-localStorage.js 模块
+    // scripts/f-localStorage.js module
     LoadLocal,
     SaveLocal,
     LoadLocalBool,
 
-    // scripts/i18n.js 模块
+    // scripts/i18n.js module
     getCurrentLocale,
 
-    // 初始化时为 null
+    // null on initialization
     doNavbarIconClick: null,
 
-    // 初始化方法
+    // initialization method
     async init() {
         try {
             const { doNavbarIconClick } = await import('/script.js');
             this.doNavbarIconClick = doNavbarIconClick || null;
         } catch (error) {
-            console.warn('无法导入 doNavbarIconClick:', error);
+            console.warn('Failed to import doNavbarIconClick:', error);
             this.doNavbarIconClick = () => {
-                console.warn('doNavbarIconClick 不可用');
+                console.warn('doNavbarIconClick is not available');
             };
         }
     }
 };
 
-// 导出前初始化
+// Initialize before exporting
 applicationFunctionManager.init();
 
 export default applicationFunctionManager;

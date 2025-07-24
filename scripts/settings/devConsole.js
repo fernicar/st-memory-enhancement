@@ -1,7 +1,7 @@
 import {EDITOR, SYSTEM, USER, BASE} from '../../core/manager.js';
 import JSON5 from '../../utils/json5.min.mjs'
 
-let isPopupOpening = false; // 防止在弹窗打开时推送日志导致循环
+let isPopupOpening = false; // Prevent pushing logs when the popup is open, which would cause a loop
 let debugEventHistory = [];
 
 function updateTableDebugLog(type, message, detail = "", timeout, stack) {
@@ -66,45 +66,45 @@ async function copyPopup(log) {
 }
 
 /**
- * 渲染Debug日志到容器
- * @param $container jQuery对象，日志容器
- * @param logs 日志数组
- * @param onlyError 是否仅显示错误日志
+ * Render Debug logs to the container
+ * @param $container jQuery object, the log container
+ * @param logs The log array
+ * @param onlyError Whether to only display error logs
  */
 function renderDebugLogs($container, logs, onlyError) {
-    $container.empty(); // 清空容器
+    $container.empty(); // Clear the container
 
     if (!logs || logs.length === 0) {
         $container.append('<div class="debug-log-item">No debug log found.</div>');
         return;
     }
 
-    // 用于匹配堆栈信息行，并捕获函数名、URL和行号列号
+    // Used to match stack information lines, and capture function names, URLs, and line and column numbers
     const stackLineRegex = /at\s+([^\s]*?)\s+\((https?:\/\/[^\s:]+(?::\d+)?(?:[^\s:]+)*)(?::(\d+):(\d+))?\)/g;
     logs.forEach(log => {
         if (onlyError && log.type !== 'error') {
-            return; // 如果只显示错误日志且当前日志不是 error 类型，则跳过
+            return; // If only error logs are displayed and the current log is not of type error, skip it
         }
 
-        const logElement = $('<div class="debug-log-item"></div>'); // 创建一个 div 元素来显示每条 log
+        const logElement = $('<div class="debug-log-item"></div>'); // Create a div element to display each log
         const timeSpan = $('<span class="log-time"></span>').text(`[${log.time}]`);
         const typeSpan = $('<span class="log-type"></span>').addClass(`log-type-${log.type}`).text(`[${log.type}]`);
         const messageSpan = $('<span class="log-message"></span>').text(log.message);
         const copyButton = $(`${copyButtonStyle}`);
 
-        logElement.append(timeSpan).append(' ').append(typeSpan).append(': ').append(messageSpan).append(' ').append(copyButton); // 添加复制按钮
+        logElement.append(timeSpan).append(' ').append(typeSpan).append(': ').append(messageSpan).append(' ').append(copyButton); // Add a copy button
 
         copyButton.on('click', () => {
             copyPopup(log);
         })
 
         if (log.stack) {
-            // 使用正则表达式替换堆栈信息行，并高亮函数名，URL可点击
+            // Use regular expressions to replace stack information lines, and highlight function names, URLs can be clicked
             const formattedStack = log.stack.replace(stackLineRegex, (match, functionName, urlBase, lineNumber, columnNumber) => {
-                // functionName 是函数名 (例如 getPromptAndRebuildTable, dispatch)
-                // urlBase 是链接的基础部分
-                // lineNumber 是行号 (如果存在)
-                // columnNumber 是列号 (如果存在)
+                // functionName is the function name (e.g. getPromptAndRebuildTable, dispatch)
+                // urlBase is the base part of the link
+                // lineNumber is the line number (if it exists)
+                // columnNumber is the column number (if it exists)
 
                 let functionNameHtml = '';
                 if (functionName) {
@@ -115,7 +115,7 @@ function renderDebugLogs($container, logs, onlyError) {
                 if (lineNumber && columnNumber) {
                     locationHtml = `<span style="color: rgb(98, 145, 179)">:${lineNumber}:${columnNumber}</span>`;
                 }
-                return `at ${functionNameHtml}(${linkHtml}${locationHtml})`; // 重新构建堆栈信息行
+                return `at ${functionNameHtml}(${linkHtml}${locationHtml})`; // Reconstruct the stack information line
             });
             const stackPre = $('<pre class="log-stack"></pre>').html(formattedStack);
             logElement.append(stackPre);
@@ -129,13 +129,13 @@ export const consoleMessageToEditor = {
     info: (message, detail, timeout) => updateTableDebugLog('info', message, detail, timeout),
     success: (message, detail, timeout) => updateTableDebugLog('success', message, detail, timeout),
     warning: (message, detail, timeout) => updateTableDebugLog('warning', message, detail, timeout),
-    // 如果 error 参数是一个真正的 Error 对象，则可以附加 error.message 或 error.name。
-    // 但如果调用者只传递了字符串，那么 error 参数会是 undefined。
-    // 假设主要的错误信息已经在 message 或 detail 中。
-    // 如果需要显示堆栈，则 error 参数应该是 Error 对象。
+    // If the error parameter is a real Error object, you can attach error.message or error.name.
+    // But if the caller only passes a string, the error parameter will be undefined.
+    // Assume that the main error message is already in message or detail.
+    // If you need to display the stack, the error parameter should be an Error object.
     error: (message, detail, errorObj, timeout) => {
         let fullMessage = message;
-        // 如果 detail 存在，可以考虑如何合并它，或者假设它已包含在 message 中。
+        // If detail exists, you can consider how to merge it, or assume that it is already included in message.
         // For now, let's assume 'message' contains the primary string and 'detail' is secondary.
         // The 'errorObj' is specifically for stack trace.
         updateTableDebugLog('error', fullMessage, detail, timeout, errorObj?.stack);
@@ -144,7 +144,7 @@ export const consoleMessageToEditor = {
 }
 
 /**
- * +.新增代码，打开自定义表格推送渲染器弹窗
+ * +. New code, open the custom table push renderer popup
  * @returns {Promise<void>}
  */
 export async function openTableDebugLogPopup() {
@@ -155,20 +155,20 @@ export async function openTableDebugLogPopup() {
     const tableDebugLogPopup = new EDITOR.Popup(manager, EDITOR.POPUP_TYPE.TEXT, '', { large: true, wide: true, allowVerticalScrolling: true });
     const $dlg = $(tableDebugLogPopup.dlg);
     const $debugLogContainer = $dlg.find('#debugLogContainer');
-    const $onlyErrorLogCheckbox = $dlg.find('#only_error_log'); // 获取 checkbox
-    const $exportButton = $dlg.find('#table_debug_log_export_button'); // 获取导出按钮
-    const $exportInfoButton = $dlg.find('#table_debug_info_export_button'); // 获取导出调试信息按钮
-    const $importInfoButton = $dlg.find('#table_debug_info_import_button'); // 获取导入调试信息按钮
+    const $onlyErrorLogCheckbox = $dlg.find('#only_error_log'); // Get the checkbox
+    const $exportButton = $dlg.find('#table_debug_log_export_button'); // Get the export button
+    const $exportInfoButton = $dlg.find('#table_debug_info_export_button'); // Get the export debug information button
+    const $importInfoButton = $dlg.find('#table_debug_info_import_button'); // Get the import debug information button
 
-    $debugLogContainer.empty(); // 清空容器，避免重复显示旧日志
+    $debugLogContainer.empty(); // Clear the container to avoid repeatedly displaying old logs
     toastr.clear()
 
-    // 初始化渲染日志，根据 checkbox 状态决定是否只显示 error
+    // Initialize rendering logs, and decide whether to only display errors based on the checkbox status
     renderDebugLogs($debugLogContainer, debugEventHistory, $onlyErrorLogCheckbox.is(':checked'));
 
-    $onlyErrorLogCheckbox.off('change').on('change', function () { // 移除之前的事件监听，避免重复绑定
-        const onlyError = $(this).is(':checked'); // 获取 checkbox 的选中状态
-        renderDebugLogs($debugLogContainer, debugEventHistory, onlyError); // 重新渲染日志
+    $onlyErrorLogCheckbox.off('change').on('change', function () { // Remove the previous event listener to avoid repeated binding
+        const onlyError = $(this).is(':checked'); // Get the checked status of the checkbox
+        renderDebugLogs($debugLogContainer, debugEventHistory, onlyError); // Re-render the logs
     });
     $exportButton.on('click', () => {
         const logData = debugEventHistory.map(log => {
@@ -220,10 +220,10 @@ export async function openTableDebugLogPopup() {
                     BASE.sheetsData.context = json.chatMate;
                     const lastestPiece = USER.getChatPiece().piece
                     lastestPiece.hash_sheets = json.lastestSheet.piece.hash_sheets;
-                    console.log('导入的调试信息：', json);
+                    console.log('Imported debug information:', json);
                     USER.saveChat()
                 } catch (error) {
-                    console.error('导入失败：', error);
+                    console.error('Import failed:', error);
                 }
             };
             reader.readAsText(file);
