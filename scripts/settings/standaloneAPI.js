@@ -4,22 +4,22 @@ import LLMApiService from "../../services/llmApi.js";
 import {PopupConfirm} from "../../components/popupConfirm.js";
 
 let loadingToast = null;
-let currentApiKeyIndex = 0;// 用于记录当前使用的API Key的索引
+let currentApiKeyIndex = 0;// Used to record the index of the currently used API Key
 
 
 /**
- * 加密
- * @param {*} rawKey - 原始密钥
- * @param {*} deviceId - 设备ID
- * @returns {string} 加密后的字符串
+ * Encrypt
+ * @param {*} rawKey - The original key
+ * @param {*} deviceId - The device ID
+ * @returns {string} The encrypted string
  */
 export function encryptXor(rawKey, deviceId) {
-    // 处理多个逗号分隔的API Key
+    // Handle multiple comma-separated API Keys
     const keys = rawKey.split(',').map(k => k.trim()).filter(k => k.trim().length > 0);
     const uniqueKeys = [...new Set(keys)];
     const uniqueKeyString = uniqueKeys.join(',');
 
-    // 如果有重复Key，返回去重数量和加密后的Key
+    // If there are duplicate keys, return the number of duplicates removed and the encrypted key
     if (keys.length !== uniqueKeys.length) {
         return {
             encrypted: Array.from(uniqueKeyString).map((c, i) =>
@@ -29,7 +29,7 @@ export function encryptXor(rawKey, deviceId) {
         };
     }
 
-    // 没有重复Key时直接返回加密结果
+    // Return the encrypted result directly when there are no duplicate keys
     return Array.from(uniqueKeyString).map((c, i) =>
         c.charCodeAt(0) ^ deviceId.charCodeAt(i % deviceId.length)
     ).map(c => c.toString(16).padStart(2, '0')).join('');
@@ -38,17 +38,17 @@ export function encryptXor(rawKey, deviceId) {
 export function processApiKey(rawKey, deviceId) {
     try {
         const keys = rawKey.split(',').map(k => k.trim()).filter(k => k.trim().length > 0);
-        const invalidKeysCount = rawKey.split(',').length - keys.length; // 计算无效Key的数量
+        const invalidKeysCount = rawKey.split(',').length - keys.length; // Calculate the number of invalid keys
         const encryptedResult = encryptXor(rawKey, deviceId);
         const totalKeys = rawKey.split(',').length;
-        const remainingKeys = totalKeys - (encryptedResult.duplicatesRemoved || 0); // 剩余去掉无效和重复之后Key的数量
+        const remainingKeys = totalKeys - (encryptedResult.duplicatesRemoved || 0); // The number of remaining keys after removing invalid and duplicate keys
 
-        let message = `已更新API Key，共${remainingKeys}个Key`;
+        let message = `API Key updated, ${remainingKeys} keys in total`;
         if(totalKeys - remainingKeys > 0 || invalidKeysCount > 0){
             const removedParts = [];
-            if (totalKeys - remainingKeys > 0) removedParts.push(`${totalKeys - remainingKeys}个重复Key`);
-            if (invalidKeysCount > 0) removedParts.push(`${invalidKeysCount}个空值`);
-            message += `（已去除${removedParts.join('，')}）`;
+            if (totalKeys - remainingKeys > 0) removedParts.push(`${totalKeys - remainingKeys} duplicate keys`);
+            if (invalidKeysCount > 0) removedParts.push(`${invalidKeysCount} empty values`);
+            message += ` (removed ${removedParts.join(', ')})`;
         }
         return {
             encryptedResult,
@@ -60,15 +60,15 @@ export function processApiKey(rawKey, deviceId) {
             message: message,
         }
     } catch (error) {
-        console.error('API Key 处理失败:', error);
+        console.error('API Key processing failed:', error);
         throw error;
     }
 }
 
 
 /**
- * API KEY解密
- * @returns {Promise<string|null>} 解密后的API密钥
+ * API KEY decryption
+ * @returns {Promise<string|null>} The decrypted API key
  */
 export async function getDecryptedApiKey() { // Export this function
     try {
@@ -78,16 +78,16 @@ export async function getDecryptedApiKey() { // Export this function
 
         return await decryptXor(encrypted, deviceId);
     } catch (error) {
-        console.error('API Key 解密失败:', error);
+        console.error('API Key decryption failed:', error);
         return null;
     }
 }
 
 /**
- * 解密
- * @param {string} encrypted - 加密字符串
- * @param {string} deviceId - 设备ID
- * @returns {string|null} 解密后的字符串，如果解密失败则返回null
+ * Decrypt
+ * @param {string} encrypted - The encrypted string
+ * @param {string} deviceId - The device ID
+ * @returns {string|null} The decrypted string, or null if decryption fails
  */
 async function decryptXor(encrypted, deviceId) {
     try {
@@ -98,33 +98,33 @@ async function decryptXor(encrypted, deviceId) {
             b ^ deviceId.charCodeAt(i % deviceId.length)
         ));
     } catch(e) {
-        console.error('解密失败:', e);
+        console.error('Decryption failed:', e);
         return null;
     }
 }
 
 async function createLoadingToast(isUseMainAPI = true, isSilent = false) {
     if (isSilent) {
-        // 在静默模式下，不显示弹窗，直接模拟“后台继续”
-        // 返回 false，因为 PopupConfirm 中“后台继续”按钮（cancelBtn）返回 false
+        // In silent mode, do not display the popup, directly simulate "Continue in background"
+        // Returns false, because the "Continue in background" button (cancelBtn) in PopupConfirm returns false
         return Promise.resolve(false);
     }
     loadingToast?.close()
     loadingToast = new PopupConfirm();
     return await loadingToast.show(
         isUseMainAPI
-            ? '正在使用【主API】重新生成完整表格...'
-            : '正在使用【自定义API】重新生成完整表格...',
-        '后台继续',
-        '中止执行',
+            ? 'Regenerating the entire table using [Main API]...'
+            : 'Regenerating the entire table using [Custom API]...',
+        'Continue in background',
+        'Abort execution',
     )
 }
 
-/**主API调用
- * @param {string|Array<object>} systemPrompt - 系统提示或消息数组
- * @param {string} [userPrompt] - 用户提示 (如果第一个参数是消息数组，则此参数被忽略)
- * @param {boolean} [isSilent=false] - 是否以静默模式运行，不显示加载提示
- * @returns {Promise<string>} 生成的响应内容
+/**Main API call
+ * @param {string|Array<object>} systemPrompt - The system prompt or message array
+ * @param {string} [userPrompt] - The user prompt (this parameter is ignored if the first parameter is a message array)
+ * @param {boolean} [isSilent=false] - Whether to run in silent mode, without displaying a loading prompt
+ * @returns {Promise<string>} The generated response content
  */
 export async function handleMainAPIRequest(systemPrompt, userPrompt, isSilent = false) {
     let finalSystemPrompt = '';
@@ -145,15 +145,15 @@ export async function handleMainAPIRequest(systemPrompt, userPrompt, isSilent = 
         if (loadingToast) {
             loadingToast.frameUpdate(() => {
                 if (loadingToast) {
-                    loadingToast.text = `正在使用【主API】(多消息)重新生成完整表格: ${((Date.now() - startTime) / 1000).toFixed(1)}秒`;
+                    loadingToast.text = `Regenerating the entire table using [Main API] (multiple messages): ${((Date.now() - startTime) / 1000).toFixed(1)} seconds`;
                 }
             });
         }
 
-        console.log('主API请求的多消息数组:', messages); // Log the actual array
+        console.log('Main API request multi-message array:', messages); // Log the actual array
         // Use TavernHelper.generateRaw with the array, enabling streaming
 
-        if(!TavernHelper) throw new Error("酒馆助手未安装，总结功能依赖于酒馆助手插件，请安装后刷新");
+        if(!TavernHelper) throw new Error("Tavern Helper is not installed, the summary function depends on the Tavern Helper plugin, please install it and refresh");
 
         const response = await TavernHelper.generateRaw({
             ordered_prompts: messages, // Pass the array directly
@@ -177,7 +177,7 @@ export async function handleMainAPIRequest(systemPrompt, userPrompt, isSilent = 
         if (loadingToast) {
             loadingToast.frameUpdate(() => {
                 if (loadingToast) {
-                    loadingToast.text = `正在使用【主API】重新生成完整表格: ${((Date.now() - startTime) / 1000).toFixed(1)}秒`;
+                    loadingToast.text = `Regenerating the entire table using [Main API]: ${((Date.now() - startTime) / 1000).toFixed(1)} seconds`;
                 }
             });
         }
@@ -197,47 +197,47 @@ export async function handleMainAPIRequest(systemPrompt, userPrompt, isSilent = 
 } // Correct closing brace for the function
 
 /**
- * 处理 API 测试请求，包括获取输入、解密密钥、调用测试函数和返回结果。
- * @param {string} apiUrl - API URL.
- * @param {string} encryptedApiKeys - 加密的 API 密钥字符串.
- * @param {string} modelName - 模型名称.
- * @returns {Promise<Array<{keyIndex: number, success: boolean, error?: string}>>} 测试结果数组.
+ * Handle API test requests, including getting input, decrypting keys, calling test functions, and returning results.
+ * @param {string} apiUrl - The API URL.
+ * @param {string} encryptedApiKeys - The encrypted API key string.
+ * @param {string} modelName - The model name.
+ * @returns {Promise<Array<{keyIndex: number, success: boolean, error?: string}>>} An array of test results.
  */
 export async function handleApiTestRequest(apiUrl, encryptedApiKeys, modelName) {
     if (!apiUrl || !encryptedApiKeys) {
-        EDITOR.error('请先填写 API URL 和 API Key。');
-        return []; // 初始验证失败时返回空数组
+        EDITOR.error('Please fill in the API URL and API Key first.');
+        return []; // Return an empty array on initial validation failure
     }
 
     const decryptedApiKeysString = await getDecryptedApiKey(); // Use imported function
     if (!decryptedApiKeysString) {
-        EDITOR.error('API Key 解密失败或未设置！');
-        return []; // 解密失败时返回空数组
+        EDITOR.error('API Key decryption failed or not set!');
+        return []; // Return an empty array on decryption failure
     }
 
     const apiKeys = decryptedApiKeysString.split(',').map(k => k.trim()).filter(k => k.length > 0);
     if (apiKeys.length === 0) {
-        EDITOR.error('未找到有效的 API Key。');
-        return []; // 如果找不到有效的密钥则返回空数组
+        EDITOR.error('No valid API Key found.');
+        return []; // Return an empty array if no valid keys are found
     }
-    const testAll = await EDITOR.callGenericPopup(`检测到 ${apiKeys.length} 个 API Key。\n注意：测试方式和酒馆自带的相同，将会发送一次消息（token数量很少），但如果使用的是按次计费的API请注意消费情况。`, EDITOR.POPUP_TYPE.CONFIRM, '', { okButton: "测试第一个key", cancelButton: "取消" });
+    const testAll = await EDITOR.callGenericPopup(`Detected ${apiKeys.length} API Keys.\nNote: The test method is the same as the one that comes with the tavern. A message will be sent once (the number of tokens is very small), but if you are using a pay-per-use API, please pay attention to the consumption.`, EDITOR.POPUP_TYPE.CONFIRM, '', { okButton: "Test the first key", cancelButton: "Cancel" });
     let keysToTest = [];
-    if (testAll === null) return []; // 用户取消弹窗，返回空数组
+    if (testAll === null) return []; // User canceled the popup, return an empty array
 
     if (testAll) {
         keysToTest = [apiKeys[0]];
-        EDITOR.info(`开始测试第 ${keysToTest.length} 个 API Key...`);
+        EDITOR.info(`Start testing the ${keysToTest.length}th API Key...`);
     } else {
-        return []; // 用户点击取消，返回空数组
+        return []; // User clicked cancel, return an empty array
     }
-    //！！~~~保留测试多个key的功能，暂时只测试第一个key~~~！！
+    //!!~~~Keep the function of testing multiple keys, temporarily only test the first key~~~!!
     try {
-        // 调用测试函数
+        // Call the test function
         const results = await testApiConnection(apiUrl, keysToTest, modelName);
 
-        // 处理结果并显示提示消息
+        // Process the results and display a prompt message
         if (results && results.length > 0) {
-            EDITOR.clear(); // 清除之前显示的'开始测试第x个API Key...'提示
+            EDITOR.clear(); // Clear the previously displayed 'Start testing the xth API Key...' prompt
             let successCount = 0;
             let failureCount = 0;
             results.forEach(result => {
@@ -245,46 +245,46 @@ export async function handleApiTestRequest(apiUrl, encryptedApiKeys, modelName) 
                     successCount++;
                 } else {
                     failureCount++;
-                    // 记录详细错误，如果可用则使用原始密钥索引
-                    console.error(`Key ${result.keyIndex !== undefined ? result.keyIndex + 1 : '?'} 测试失败: ${result.error}`);
+                    // Record detailed errors, use the original key index if available
+                    console.error(`Key ${result.keyIndex !== undefined ? result.keyIndex + 1 : '?'} test failed: ${result.error}`);
                 }
             });
 
             if (failureCount > 0) {
-                EDITOR.error(`${failureCount} 个 Key 测试失败。请检查控制台获取详细信息。`);
-                EDITOR.error(`API端点: ${apiUrl}`);
-                EDITOR.error(`错误详情: ${results.find(r => !r.success)?.error || '未知错误'}`);
+                EDITOR.error(`${failureCount} Keys failed the test. Please check the console for details.`);
+                EDITOR.error(`API endpoint: ${apiUrl}`);
+                EDITOR.error(`Error details: ${results.find(r => !r.success)?.error || 'Unknown error'}`);
             }
             if (successCount > 0) {
-                EDITOR.success(`${successCount} 个 Key 测试成功！`);
+                EDITOR.success(`${successCount} Keys passed the test!`);
             }
         } else if (results) {
-            // 处理testApiConnection可能返回空数组的情况(例如用户取消)
+            // Handle the case where testApiConnection may return an empty array (e.g., user cancels)
         }
 
-        return results; // 返回结果数组
+        return results; // Return the results array
     } catch (error) {
-        EDITOR.error(`API 测试过程中发生错误`, error.message, error);
+        EDITOR.error(`An error occurred during the API test`, error.message, error);
         console.error("API Test Error:", error);
-        // 发生一般错误时返回一个表示所有测试密钥失败的数组
+        // Return an array indicating that all test keys have failed when a general error occurs
         return keysToTest.map((_, index) => ({
-            keyIndex: apiKeys.indexOf(keysToTest[index]), // 如果需要则查找原始索引
+            keyIndex: apiKeys.indexOf(keysToTest[index]), // Find the original index if needed
             success: false,
-            error: `测试过程中发生错误: ${error.message}`
+            error: `An error occurred during the test: ${error.message}`
         }));
     }
 }
 
 /**
- * 测试API连接
- * @param {string} apiUrl - API URL
- * @param {string[]} apiKeys - API密钥数组
- * @param {string} modelName - 模型名称
- * @returns {Promise<Array<{keyIndex: number, success: boolean, error?: string}>>} 测试结果数组
+ * Test API connection
+ * @param {string} apiUrl - The API URL
+ * @param {string[]} apiKeys - The API key array
+ * @param {string} modelName - The model name
+ * @returns {Promise<Array<{keyIndex: number, success: boolean, error?: string}>>} An array of test results
  */
 export async function testApiConnection(apiUrl, apiKeys, modelName) {
     const results = [];
-    const testPrompt = "Say 'test'"; // 测试用例
+    const testPrompt = "Say 'test'"; // Test case
 
     for (let i = 0; i < apiKeys.length; i++) {
         const apiKey = apiKeys[i];
@@ -293,12 +293,12 @@ export async function testApiConnection(apiUrl, apiKeys, modelName) {
             const llmService = new LLMApiService({
                 api_url: apiUrl,
                 api_key: apiKey,
-                model_name: modelName || 'gpt-3.5-turbo', // 使用用户设置的模型名称
+                model_name: modelName || 'gpt-3.5-turbo', // Use the model name set by the user
                 system_prompt: 'You are a test assistant.',
-                temperature: 0.1 // 使用用户设置的温度
+                temperature: 0.1 // Use the temperature set by the user
             });
 
-            // 调用API
+            // Call the API
             const response = await llmService.callLLM(testPrompt);
 
             if (response && typeof response === 'string') {
@@ -323,34 +323,34 @@ export async function testApiConnection(apiUrl, apiKeys, modelName) {
     return results;
 }
 
-/**自定义API调用
- * @param {string|Array<object>} systemPrompt - 系统提示或消息数组
- * @param {string} [userPrompt] - 用户提示 (如果第一个参数是消息数组，则此参数被忽略)
- * @param {boolean} [isStepByStepSummary=false] - 是否为分步总结模式，用于控制流式传输
- * @param {boolean} [isSilent=false] - 是否以静默模式运行，不显示加载提示
- * @returns {Promise<string>} 生成的响应内容
+/**Custom API call
+ * @param {string|Array<object>} systemPrompt - The system prompt or message array
+ * @param {string} [userPrompt] - The user prompt (this parameter is ignored if the first parameter is a message array)
+ * @param {boolean} [isStepByStepSummary=false] - Whether it is in step-by-step summary mode, used to control streaming
+ * @param {boolean} [isSilent=false] - Whether to run in silent mode, without displaying a loading prompt
+ * @returns {Promise<string>} The generated response content
  */
 export async function handleCustomAPIRequest(systemPrompt, userPrompt, isStepByStepSummary = false, isSilent = false) {
     const USER_API_URL = USER.IMPORTANT_USER_PRIVACY_DATA.custom_api_url;
-    const decryptedApiKeysString = await getDecryptedApiKey(); // 获取逗号分隔的密钥字符串
+    const decryptedApiKeysString = await getDecryptedApiKey(); // Get the comma-separated key string
     const USER_API_MODEL = USER.IMPORTANT_USER_PRIVACY_DATA.custom_model_name;
-    // const MAX_RETRIES = USER.tableBaseSetting.custom_api_retries ?? 0; // 从设置中获取重试次数，默认为 0
-    const MAX_RETRIES = 0; // 从设置中获取重试次数，默认为 0
+    // const MAX_RETRIES = USER.tableBaseSetting.custom_api_retries ?? 0; // Get the number of retries from the settings, default is 0
+    const MAX_RETRIES = 0; // Get the number of retries from the settings, default is 0
 
     if (!USER_API_URL || !USER_API_MODEL) {
-        EDITOR.error('请填写完整的自定义API配置 (URL 和模型)');
+        EDITOR.error('Please fill in the complete custom API configuration (URL and model)');
         return;
     }
 
     if (!decryptedApiKeysString) {
-        EDITOR.error('API key解密失败或未设置，请检查API key设置！');
+        EDITOR.error('API key decryption failed or not set, please check the API key settings!');
         return;
     }
 
     const apiKeys = decryptedApiKeysString.split(',').map(k => k.trim()).filter(k => k.length > 0);
 
     if (apiKeys.length === 0) {
-        EDITOR.error('未找到有效的API Key，请检查输入。');
+        EDITOR.error('No valid API Key found, please check the input.');
         return;
     }
 
@@ -365,15 +365,15 @@ export async function handleCustomAPIRequest(systemPrompt, userPrompt, isStepByS
     let lastError = null;
 
     for (let i = 0; i < attempts; i++) {
-        if (suspended) break; // 检查用户是否中止了操作
+        if (suspended) break; // Check if the user has aborted the operation
 
         const keyIndexToTry = currentApiKeyIndex % totalKeys;
         const currentApiKey = apiKeys[keyIndexToTry];
-        currentApiKeyIndex++; // 移动到下一个密钥，用于下一次整体请求
+        currentApiKeyIndex++; // Move to the next key for the next overall request
 
-        console.log(`尝试使用API密钥索引进行API调用: ${keyIndexToTry}`);
+        console.log(`Attempting API call with API key index: ${keyIndexToTry}`);
         if (loadingToast) {
-            loadingToast.text = `尝试使用第 ${keyIndexToTry + 1}/${totalKeys} 个自定义API Key...`;
+            loadingToast.text = `Attempting to use the ${keyIndexToTry + 1}/${totalKeys}th custom API Key...`;
         }
 
         try { // Outer try for the whole attempt with the current key
@@ -381,9 +381,9 @@ export async function handleCustomAPIRequest(systemPrompt, userPrompt, isStepByS
             let response; // Declare response variable
 
             // --- ALWAYS Use llmService ---
-            console.log(`自定义API: 使用 llmService.callLLM (输入类型: ${Array.isArray(promptData) ? '多消息数组' : '单条消息'})`);
+            console.log(`Custom API: Using llmService.callLLM (input type: ${Array.isArray(promptData) ? 'multi-message array' : 'single message'})`);
             if (loadingToast) {
-                loadingToast.text = `正在使用第 ${keyIndexToTry + 1}/${totalKeys} 个自定义API Key (llmService)...`;
+                loadingToast.text = `Using the ${keyIndexToTry + 1}/${totalKeys}th custom API Key (llmService)...`;
             }
 
             const llmService = new LLMApiService({
@@ -399,46 +399,46 @@ export async function handleCustomAPIRequest(systemPrompt, userPrompt, isStepByS
 
             const streamCallback = (chunk) => {
                 if (loadingToast) {
-                    const modeText = isStepByStepSummary ? "(分步)" : ""; // isStepByStepSummary might be useful here still
-                    loadingToast.text = `正在使用第 ${keyIndexToTry + 1} 个Key生成${modeText}: ${chunk}`;
+                    const modeText = isStepByStepSummary ? "(Step-by-step)" : ""; // isStepByStepSummary might be useful here still
+                    loadingToast.text = `Generating with the ${keyIndexToTry + 1}th Key${modeText}: ${chunk}`;
                 }
             };
 
             try {
                 // Pass promptData (which could be string or array) to callLLM
                 response = await llmService.callLLM(promptData, streamCallback);
-                console.log(`请求成功 (llmService, 密钥索引: ${keyIndexToTry}):`, response);
+                console.log(`Request successful (llmService, key index: ${keyIndexToTry}):`, response);
                 loadingToast?.close();
                 return suspended ? 'suspended' : response; // Success, return immediately
             } catch (llmServiceError) {
                 // llmService failed, log error and continue loop
-                console.error(`API调用失败 (llmService)，密钥索引 ${keyIndexToTry}:`, llmServiceError);
+                console.error(`API call failed (llmService), key index ${keyIndexToTry}:`, llmServiceError);
                 lastError = llmServiceError;
-                EDITOR.error(`使用第 ${keyIndexToTry + 1} 个 Key 调用 (llmService) 失败: ${llmServiceError.message || '未知错误'}`);
+                EDITOR.error(`Failed to call with the ${keyIndexToTry + 1}th Key (llmService): ${llmServiceError.message || 'Unknown error'}`);
                 // Let the loop continue to the next key
             }
             // If code reaches here, the llmService call failed for this key
 
         } catch (error) { // This catch should ideally not be reached due to inner try/catch
-            console.error(`处理密钥索引 ${keyIndexToTry} 时发生意外错误:`, error);
+            console.error(`An unexpected error occurred while processing key index ${keyIndexToTry}:`, error);
             lastError = error;
-            EDITOR.error(`处理第 ${keyIndexToTry + 1} 个 Key 时发生意外错误`, error.message || '未知错误', error);
+            EDITOR.error(`An unexpected error occurred while processing the ${keyIndexToTry + 1}th Key`, error.message || 'Unknown error', error);
         }
     }
 
-    // 所有尝试均失败
+    // All attempts failed
     loadingToast?.close();
     if (suspended) {
-        EDITOR.warning('操作已被用户中止。');
+        EDITOR.warning('Operation aborted by user.');
         return 'suspended';
     }
 
-    const errorMessage = `所有 ${attempts} 次尝试均失败。最后错误: ${lastError?.message || '未知错误'}`;
+    const errorMessage = `All ${attempts} attempts failed. Last error: ${lastError?.message || 'Unknown error'}`;
     EDITOR.error(errorMessage, "", lastError);
-    console.error('所有API调用尝试均失败。', lastError);
-    return `错误: ${errorMessage}`; // 返回一个明确的错误字符串
+    console.error('All API call attempts failed.', lastError);
+    return `Error: ${errorMessage}`; // Return a clear error string
 
-    // // 公共请求配置 (Commented out original code remains unchanged)
+    // // Public request configuration (Commented out original code remains unchanged)
     // const requestConfig = {
     //     method: 'POST',
     //     headers: {
@@ -455,7 +455,7 @@ export async function handleCustomAPIRequest(systemPrompt, userPrompt, isStepByS
     //     })
     // };
     //
-    // // 通用请求函数
+    // // Generic request function
     // const makeRequest = async (url) => {
     //     const response = await fetch(url, requestConfig);
     //     if (!response.ok) {
@@ -466,12 +466,12 @@ export async function handleCustomAPIRequest(systemPrompt, userPrompt, isStepByS
     // };
     // let firstError;
     // try {
-    //     // 第一次尝试补全/chat/completions
+    //     // First attempt to complete /chat/completions
     //     const modifiedUrl = new URL(USER_API_URL);
     //     modifiedUrl.pathname = modifiedUrl.pathname.replace(/\/$/, '') + '/chat/completions';
     //     const result = await makeRequest(modifiedUrl.href);
     //     if (result?.choices?.[0]?.message?.content) {
-    //         console.log('请求成功:', result.choices[0].message.content)
+    //         console.log('Request successful:', result.choices[0].message.content)
     //         return result.choices[0].message.content;
     //     }
     // } catch (error) {
@@ -479,30 +479,31 @@ export async function handleCustomAPIRequest(systemPrompt, userPrompt, isStepByS
     // }
     //
     // try {
-    //     // 第二次尝试原始URL
+    //     // Second attempt at the original URL
     //     const result = await makeRequest(USER_API_URL);
     //     return result.choices[0].message.content;
     // } catch (secondError) {
-    //     const combinedError = new Error('API请求失败');
+    //     const combinedError = new Error('API request failed');
     //     combinedError.details = {
-    //         firstAttempt: firstError?.message || '第一次请求无错误信息',
+    //         firstAttempt: firstError?.message || 'No error message on first request',
     //         secondAttempt: secondError.message
     //     };
     //     throw combinedError;
     // }
 }
 
-/**请求模型列表
+/**
+ * Request model list
  * @returns {Promise<void>}
  */
 /**
- * 格式化API Key用于错误提示
- * @param {string} key - API Key
- * @returns {string} 格式化后的Key字符串
+ * Format API Key for error messages
+ * @param {string} key - The API Key
+ * @returns {string} The formatted Key string
  */
 function maskApiKey(key) {
     const len = key.length;
-    if (len === 0) return "[空密钥]";
+    if (len === 0) return "[Empty Key]";
     if (len <= 8) {
         const visibleCount = Math.ceil(len / 2);
         return key.substring(0, visibleCount) + '...';
@@ -511,43 +512,43 @@ function maskApiKey(key) {
     }
 }
 
-/**请求模型列表
+/**Request model list
  * @returns {Promise<void>}
  */
 export async function updateModelList() {
     const apiUrl = $('#custom_api_url').val().trim();
-    const decryptedApiKeysString = await getDecryptedApiKey(); // 使用 getDecryptedApiKey 函数解密
+    const decryptedApiKeysString = await getDecryptedApiKey(); // Use getDecryptedApiKey function to decrypt
 
     if (!decryptedApiKeysString) {
-        EDITOR.error('API key解密失败或未设置，请检查API key设置！');
+        EDITOR.error('API key decryption failed or not set, please check the API key settings!');
         return;
     }
     if (!apiUrl) {
-        EDITOR.error('请输入API URL');
+        EDITOR.error('Please enter the API URL');
         return;
     }
 
     const apiKeys = decryptedApiKeysString.split(',').map(k => k.trim()).filter(k => k.length > 0);
 
     if (apiKeys.length === 0) {
-        EDITOR.error('未找到有效的API Key，请检查输入。');
+        EDITOR.error('No valid API Key found, please check the input.');
         return;
     }
 
     let foundValidKey = false;
     const invalidKeysInfo = [];
-    let modelCount = 0; // 用于记录获取到的模型数量
+    let modelCount = 0; // Used to record the number of models obtained
     const $selector = $('#model_selector');
 
-    // 规范化URL路径
+    // Normalize URL path
     let modelsUrl;
     try {
         const normalizedUrl = new URL(apiUrl);
         normalizedUrl.pathname = normalizedUrl.pathname.replace(/\/$/, '') + '/models';
         modelsUrl = normalizedUrl.href;
     } catch (e) {
-        EDITOR.error(`无效的API URL: ${apiUrl}`, "", e);
-        console.error('URL解析失败:', e);
+        EDITOR.error(`Invalid API URL: ${apiUrl}`, "", e);
+        console.error('URL parsing failed:', e);
         return;
     }
 
@@ -562,7 +563,7 @@ export async function updateModelList() {
             });
 
             if (!response.ok) {
-                let errorMsg = `请求失败: ${response.status}`;
+                let errorMsg = `Request failed: ${response.status}`;
                 try {
                     const errorBody = await response.text();
                     errorMsg += ` - ${errorBody}`;
@@ -572,9 +573,9 @@ export async function updateModelList() {
 
             const data = await response.json();
 
-            // 只有在第一次成功获取时才更新下拉框
+            // Only update the dropdown box when the first successful acquisition is made
             if (!foundValidKey && data?.data?.length > 0) {
-                $selector.empty(); // 清空现有选项
+                $selector.empty(); // Clear existing options
                 const customModelName = USER.IMPORTANT_USER_PRIVACY_DATA.custom_model_name;
                 let hasMatchedModel = false;
 
@@ -584,94 +585,94 @@ export async function updateModelList() {
                         text: model.id
                     }));
 
-                    // 检查是否有模型名称与custom_model_name匹配
+                    // Check if there is a model name that matches custom_model_name
                     if (model.id === customModelName) {
                         hasMatchedModel = true;
                     }
                 });
 
-                // 如果有匹配的模型，则选中它
+                // If there is a matching model, select it
                 if (hasMatchedModel) {
                     $selector.val(customModelName);
                 }
 
                 foundValidKey = true;
-                modelCount = data.data.length; // 记录模型数量
-                // 不在此处显示成功消息，统一在最后处理
+                modelCount = data.data.length; // Record the number of models
+                // Do not display success message here, handle it uniformly at the end
             } else if (!foundValidKey && (!data?.data || data.data.length === 0)) {
-                 // 即使请求成功，但没有模型数据，也视为一种失败情况，记录下来
-                 throw new Error('请求成功但未返回有效模型列表');
+                 // Even if the request is successful, but there is no model data, it is also regarded as a failure case and recorded
+                 throw new Error('Request successful but no valid model list returned');
             }
-            // 如果已经找到有效key并更新了列表，后续的key只做有效性检查，不再更新UI
+            // If a valid key has been found and the list has been updated, subsequent keys will only be checked for validity and the UI will no longer be updated
 
         } catch (error) {
-            console.error(`使用第 ${i + 1} 个 Key 获取模型失败:`, error);
+            console.error(`Failed to get models using the ${i + 1}th Key:`, error);
             invalidKeysInfo.push({ index: i + 1, key: currentApiKey, error: error.message });
         }
     }
 
-    // 处理最终结果和错误提示
+    // Handle final results and error prompts
     if (foundValidKey) {
-        EDITOR.success(`成功获取 ${modelCount} 个模型并更新列表 (共检查 ${apiKeys.length} 个Key)`);
+        EDITOR.success(`Successfully obtained ${modelCount} models and updated the list (a total of ${apiKeys.length} Keys were checked)`);
     } else {
-        EDITOR.error('未能使用任何提供的API Key获取模型列表');
-        $selector.empty(); // 确保在所有key都无效时清空列表
-        $selector.append($('<option>', { value: '', text: '未能获取模型列表' }));
+        EDITOR.error('Failed to get the model list using any of the provided API Keys');
+        $selector.empty(); // Make sure to clear the list when all keys are invalid
+        $selector.append($('<option>', { value: '', text: 'Failed to get model list' }));
     }
 
     if (invalidKeysInfo.length > 0) {
         const errorDetails = invalidKeysInfo.map(item =>
-            `第${item.index}个Key (${maskApiKey(item.key)}) 无效: ${item.error}`
+            `The ${item.index}th Key (${maskApiKey(item.key)}) is invalid: ${item.error}`
         ).join('\n');
-        EDITOR.error(`以下API Key无效:\n${errorDetails}`);
+        EDITOR.error(`The following API Keys are invalid:\n${errorDetails}`);
     }
 }
 /**
- * 估算 Token 数量
- * @param {string} text - 要估算 token 数量的文本
- * @returns {number} 估算的 token 数量
+ * Estimate Token Count
+ * @param {string} text - The text for which to estimate the token count
+ * @returns {number} The estimated token count
  */
 export function estimateTokenCount(text) {
-    // 统计中文字符数量
+    // Count the number of Chinese characters
     let chineseCount = (text.match(/[\u4e00-\u9fff]/g) || []).length;
 
-    // 统计英文单词数量
+    // Count the number of English words
     let englishWords = text.match(/\b\w+\b/g) || [];
     let englishCount = englishWords.length;
 
-    // 估算 token 数量
+    // Estimate the number of tokens
     let estimatedTokenCount = chineseCount + Math.floor(englishCount * 1.2);
     return estimatedTokenCount;
 }
 /**
  * @description
- * - **功能**: 导出所有表格数据，方便其他插件调用。
- * - **使用场景**: 当其他插件需要访问或处理当前插件管理的表格数据时，可以通过此函数获取。
- * - **返回值**: 返回一个包含所有表格数据的数组，每个表格对象包含：
- *   - `name`: 表格的名称。
- *   - `data`: 一个二维数组，表示表格的完整数据（包括表头和所有行）。
+ * - **Function**: Export all table data for other plugins to call.
+ * - **Use case**: When other plugins need to access or process the table data managed by the current plugin, they can use this function to get it.
+ * - **Return value**: Returns an array containing all table data, each table object contains:
+ *   - `name`: The name of the table.
+ *   - `data`: A two-dimensional array representing the complete data of the table (including the header and all rows).
  *
  * @returns {Array<Object<{name: string, data: Array<Array<string>>}>>}
  */
 export function ext_getAllTables() {
-    // 核心重构：与 ext_exportAllTablesAsJson 保持一致，确保数据源是最新的持久化状态。
+    // Core refactoring: Consistent with ext_exportAllTablesAsJson, ensure that the data source is the latest persistent state.
     
-    // 1. 获取最新的 piece
+    // 1. Get the latest piece
     const { piece } = BASE.getLastSheetsPiece();
     if (!piece || !piece.hash_sheets) {
-        console.warn("[Memory Enhancement] ext_getAllTables: 未找到任何有效的表格数据。");
+        console.warn("[Memory Enhancement] ext_getAllTables: No valid table data found.");
         return [];
     }
 
-    // 2. 基于最新的 hash_sheets 创建/更新 Sheet 实例
+    // 2. Create/update Sheet instances based on the latest hash_sheets
     const tables = BASE.hashSheetsToSheets(piece.hash_sheets);
     if (!tables || tables.length === 0) {
         return [];
     }
     
-    // 3. 遍历最新的实例构建数据
+    // 3. Iterate through the latest instances to build data
     const allData = tables.map(table => {
-        if (!table.enable) return null; // 跳过禁用的表格
+        if (!table.enable) return null; // Skip disabled tables
         const header = table.getHeader();
         const body = table.getBody();
         const fullData = [header, ...body];
@@ -680,25 +681,25 @@ export function ext_getAllTables() {
             name: table.name,
             data: fullData,
         };
-    }).filter(Boolean); // 过滤掉 null (禁用的表格)
+    }).filter(Boolean); // Filter out null (disabled tables)
 
     return allData;
 }
 
 /**
  * @description
- * - **功能**: 导出所有表格为一个 JSON 对象，格式与 '范例表格.json' 类似。
- * - **使用场景**: 用于将当前所有表格的状态和数据导出为一个单一的 JSON 文件。
- * - **返回值**: 返回一个 JSON 对象，键是表格的 UID，值是表格的完整配置和数据。
+ * - **Function**: Export all tables as a JSON object, the format is similar to 'Sample Table.json'.
+ * - **Use case**: Used to export the state and data of all current tables into a single JSON file.
+ * - **Return value**: Returns a JSON object, the key is the UID of the table, and the value is the complete configuration and data of the table.
  *
  * @returns {Object}
  */
 export function ext_exportAllTablesAsJson() {
-    // 最终、最稳妥的方案：确保输入给 JSON.stringify 的数据是纯净的。
+    // The final and most stable solution: ensure that the data input to JSON.stringify is pure.
 
     const { piece } = BASE.getLastSheetsPiece();
     if (!piece || !piece.hash_sheets) {
-        console.warn("[Memory Enhancement] ext_exportAllTablesAsJson: 未找到任何有效的表格数据。");
+        console.warn("[Memory Enhancement] ext_exportAllTablesAsJson: No valid table data found.");
         return {};
     }
 
@@ -709,16 +710,16 @@ export function ext_exportAllTablesAsJson() {
 
     const exportData = {};
     tables.forEach(table => {
-        if (!table.enable) return; // 跳过禁用的表格
+        if (!table.enable) return; // Skip disabled tables
 
         try {
             const rawContent = table.getContent(true) || [];
 
-            // 深度清洗，确保所有单元格都是字符串类型。
-            // 这是防止因 undefined、null 或其他非字符串类型导致 JSON.stringify 行为异常的关键。
+            // Deep cleaning to ensure that all cells are of string type.
+            // This is the key to prevent JSON.stringify from behaving abnormally due to undefined, null, or other non-string types.
             const sanitizedContent = rawContent.map(row =>
                 Array.isArray(row) ? row.map(cell =>
-                    String(cell ?? '') // 将 null 和 undefined 转换为空字符串，其他类型强制转换为字符串
+                    String(cell ?? '') // Convert null and undefined to empty strings, and force other types to strings
                 ) : []
             );
 
@@ -728,17 +729,17 @@ export function ext_exportAllTablesAsJson() {
                 content: sanitizedContent
             };
         } catch (error) {
-            console.error(`[Memory Enhancement] 导出表格 ${table.name} (UID: ${table.uid}) 时出错:`, error);
+            console.error(`[Memory Enhancement] Error exporting table ${table.name} (UID: ${table.uid}):`, error);
         }
     });
 
-    // 直接序列化整个清洗过的对象。
-    // 如果这里依然出错，说明问题比预想的更复杂，但理论上这已经是JS中最标准的做法。
+    // Directly serialize the entire cleaned object.
+    // If there is still an error here, it means that the problem is more complicated than expected, but in theory this is the most standard practice in JS.
     try {
-        // 为了避免外层宏解析失败，我们直接返回字符串，让宏自己去解析。
+        // To avoid parsing failure of the outer macro, we directly return a string and let the macro parse it by itself.
         return exportData;
     } catch (e) {
-        console.error("[Memory Enhancement] 最终JSON序列化失败:", e);
-        return {}; // 发生意外时返回空对象
+        console.error("[Memory Enhancement] Final JSON serialization failed:", e);
+        return {}; // Return an empty object in case of an accident
     }
 }

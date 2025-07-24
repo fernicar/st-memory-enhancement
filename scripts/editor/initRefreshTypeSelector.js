@@ -1,26 +1,26 @@
 import {profile_prompts} from "../../data/profile_prompts.js";
 
 /**
- * 初始化表格刷新类型选择器
- * 根据profile_prompts对象动态生成下拉选择器的选项
+ * Initialize the table refresh type selector
+ * Dynamically generate dropdown selector options based on the profile_prompts object
  */
 export function initRefreshTypeSelector() {
     const $selector = $('#table_refresh_type_selector');
     if (!$selector.length) return;
     
-    // 清空并重新添加选项
+    // Clear and re-add options
     $selector.empty();
     
-    // 遍历profile_prompts对象，添加选项
+    // Iterate through the profile_prompts object and add options
     Object.entries(profile_prompts).forEach(([key, value]) => {
         const option = $('<option></option>')
             .attr('value', key)
             .text((() => {
                 switch(value.type) {
                     case 'refresh':
-                        return '**旧** ' + (value.name || key);
+                        return '**Old** ' + (value.name || key);
                     case 'third_party':
-                        return '**第三方作者** ' + (value.name || key);
+                        return '**Third-party author** ' + (value.name || key);
                     default:
                         return value.name || key;
                 }
@@ -28,14 +28,14 @@ export function initRefreshTypeSelector() {
         $selector.append(option);
     });
     
-    // 如果没有选项，添加默认选项
+    // If there are no options, add a default option
     if ($selector.children().length === 0) {
-        $selector.append($('<option></option>').attr('value', 'rebuild_base').text('~~~看到这个选项说明出问题了~~~~'));
+        $selector.append($('<option></option>').attr('value', 'rebuild_base').text('~~~Something went wrong if you see this option~~~~'));
     }
     
-    console.log('表格刷新类型选择器已更新');
+    console.log('Table refresh type selector has been updated');
 
-    // // 检查现有选项是否与profile_prompts一致
+    // // Check if the existing options are consistent with profile_prompts
     // let needsUpdate = false;
     // const currentOptions = $selector.find('option').map(function() {
     //     return {
@@ -44,36 +44,36 @@ export function initRefreshTypeSelector() {
     //     };
     // }).get();
 
-    // // 检查选项数量是否一致
+    // // Check if the number of options is consistent
     // if (currentOptions.length !== Object.keys(profile_prompts).length) {
     //     needsUpdate = true;
     // } else {
-    //     // 检查每个选项的值和文本是否一致
+    //     // Check if the value and text of each option are consistent
     //     Object.entries(profile_prompts).forEach(([key, value]) => {
     //         const currentOption = currentOptions.find(opt => opt.value === key);
     //         if (!currentOption || 
-    //             currentOption.text !== ((value.type=='refresh'? '**旧** ':'')+value.name|| key)) {
+    //             currentOption.text !== ((value.type=='refresh'? '**Old** ':'')+value.name|| key)) {
     //             needsUpdate = true;
     //         }
     //     });
     // }
 
-    // // 不匹配时清空并重新添加选项
+    // // Clear and re-add options when they don't match
     // if (needsUpdate) {
     //     $selector.empty();
         
-    //     // 遍历profile_prompts对象，添加选项
+    //     // Iterate through the profile_prompts object and add options
     //     Object.entries(profile_prompts).forEach(([key, value]) => {
     //         const option = $('<option></option>')
     //             .attr('value', key)
-    //             .text((value.type=='refresh'? '**旧** ':'')+value.name|| key);
+    //             .text((value.type=='refresh'? '**Old** ':'')+value.name|| key);
     //         $selector.append(option);
     //     });
         
-    //     // 如果没有选项，添加默认选项
+    //     // If there are no options, add a default option
     //     if ($selector.children().length === 0) {
-    //         $selector.append($('<option></option>').attr('value', 'rebuild_base').text('~~~看到这个选项说明出问题了~~~~'));
+    //         $selector.append($('<option></option>').attr('value', 'rebuild_base').text('~~~Something went wrong if you see this option~~~~'));
     //     }
         
-    //     console.log('表格刷新类型选择器已更新');
+    //     console.log('Table refresh type selector has been updated');
 }

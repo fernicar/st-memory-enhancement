@@ -4,9 +4,9 @@ let _lang = undefined;
 let _translations = undefined;
 
 /**
- * 异步获取翻译文件
- * @param {string} locale - 语言标识符 (e.g., 'en', 'zh-cn')
- * @returns {Promise<Object>} - 翻译对象
+ * Asynchronously get translation files
+ * @param {string} locale - Language identifier (e.g., 'en', 'zh-cn')
+ * @returns {Promise<Object>} - Translation object
  */
 async function fetchTranslations(locale) {
     try {
@@ -41,35 +41,35 @@ async function getTranslationsConfig() {
 }
 
 /**
- * 将翻译应用到 DOM 元素
- * @param {Object} translations - 翻译对象
+ * Apply translations to DOM elements
+ * @param {Object} translations - Translation object
  */
 function applyTranslations(translations) {
     console.log("Applying translations", translations);
-    // 遍历所有具有 data-i18n 属性的元素
+    // Iterate over all elements with the data-i18n attribute
     document.querySelectorAll('[data-i18n]').forEach(element => {
         const key = element.getAttribute('data-i18n');
         if (translations[key]) {
-            // 如果元素有 title 属性，则翻译 title 属性
+            // If the element has a title attribute, translate the title attribute
             if (element.hasAttribute('title')) {
                 element.setAttribute('title', translations[key]);
             } else {
-                // 否则翻译元素的文本内容
+                // Otherwise, translate the text content of the element
                 element.textContent = translations[key];
             }
         }
     });
 
-    // 通过 CSS 选择器翻译其他元素
+    // Translate other elements via CSS selectors
     translateElementsBySelector(translations, '#table_clear_up a', "Reorganize tables now");
     translateElementsBySelector(translations, '#dataTable_to_chat_button a', "Edit style of tables rendered in conversation");
 }
 
 /**
- * 使用 CSS 选择器翻译元素
- * @param {Object} translations - 翻译对象
- * @param {string} selector - CSS 选择器
- * @param {string} key - 翻译键
+ * Translate elements using CSS selectors
+ * @param {Object} translations - Translation object
+ * @param {string} selector - CSS selector
+ * @param {string} key - Translation key
  */
 function translateElementsBySelector(translations, selector, key) {
     if (translations[key]) {
@@ -81,7 +81,7 @@ function translateElementsBySelector(translations, selector, key) {
 }
 
 /**
- * 对指定范围的对象进行翻译
+ * Translate objects within a specified scope
  * @param targetScope
  * @param source
  * @returns {Promise<*|Object|Array|string>}
@@ -94,22 +94,22 @@ export async function translating(targetScope, source) {
 
     translations = translations[targetScope];
     /**
-     * 递归翻译对象中的所有字符串
-     * @param {Object|Array|string} obj - 需要翻译的对象或值
-     * @returns {Object|Array|string} - 翻译后的对象或值
+     * Recursively translate all strings in an object
+     * @param {Object|Array|string} obj - The object or value to be translated
+     * @returns {Object|Array|string} - The translated object or value
      */
     function translateRecursively(obj) {
-        // 如果是字符串，尝试翻译
+        // If it is a string, try to translate it
         if (typeof obj === 'string') {
             return translations[obj] || obj;
         }
 
-        // 如果是数组，遍历数组元素并递归翻译
+        // If it is an array, iterate through the array elements and translate them recursively
         if (Array.isArray(obj)) {
             return obj.map(item => translateRecursively(item));
         }
 
-        // 如果是对象，遍历对象属性并递归翻译
+        // If it is an object, iterate through the object properties and translate them recursively
         if (obj !== null && typeof obj === 'object') {
             const result = {};
             for (const key in obj) {
@@ -120,17 +120,17 @@ export async function translating(targetScope, source) {
             return result;
         }
 
-        // 其他类型的值保持不变
+        // Other types of values remain unchanged
         return obj;
     }
 
-    // 如果翻译字典为空，直接返回原对象
+    // If the translation dictionary is empty, return the original object directly
     if (!translations || Object.keys(translations).length === 0) {
         console.warn("No translations available for locale:", lang);
         return source;
     }
 
-    // 对目标对象进行递归翻译
+    // Recursively translate the target object
     if (source !== null && typeof source === 'object') {
         return translateRecursively(source);
     }
@@ -139,7 +139,7 @@ export async function translating(targetScope, source) {
 }
 
 /**
- * 对变量切换语言
+ * Switch language for variables
  * @param targetScope
  * @param source
  */
@@ -153,7 +153,7 @@ export async function switchLanguage(targetScope, source) {
 }
 
 /**
- * 对初始化加载的html应用翻译和本地化的主函数
+ * The main function for applying translations and localizations to the initially loaded html
  */
 export async function executeTranslation() {
     const { translations, lang } = await getTranslationsConfig();
@@ -162,13 +162,13 @@ export async function executeTranslation() {
     }
 
     console.log("Current Locale: ", lang);
-    // 获取翻译的 JSON 文件
+    // Get the translated JSON file
     if (Object.keys(translations).length === 0) {
         console.warn("No translations found for locale:", lang);
         return;
     }
 
-    // 应用翻译
+    // Apply translations
     applyTranslations(translations);
 
     console.log("Translation completed for locale:", lang);
