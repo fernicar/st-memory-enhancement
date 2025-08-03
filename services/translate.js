@@ -5,17 +5,17 @@ let _translations = undefined;
 
 /**
  * Asynchronously get translation files
- * @param {string} locale - Language identifier (e.g., 'en', 'zh-cn')
+ * @param {string} locale - Language identifier (e.g., 'en', 'en')
  * @returns {Promise<Object>} - Translation object
  */
 async function fetchTranslations(locale) {
     try {
-        const response = await fetch(`/scripts/extensions/third-party/st-memory-enhancement/assets/locales/${locale}.json`);
+        const response = await fetch(`/scripts/extensions/third-party/st-memory-enhancement-English/assets/locales/${locale}.json`);
         if (!response.ok) {
-            console.warn(`Could not load translations for ${locale}, falling back to zh-cn`);
+            console.warn(`Could not load translations for ${locale}, falling back to en`);
             // Fallback to Chinese if requested locale is not available
-            if (locale !== 'zh-cn') {
-                return await fetchTranslations('zh-cn');
+            if (locale !== 'en') {
+                return await fetchTranslations('en');
             }
             return {};
         }
@@ -31,7 +31,7 @@ async function getTranslationsConfig() {
         _lang = applicationFunctionManager.getCurrentLocale();
     }
     if (_lang === undefined) {
-        _lang = 'zh-cn';
+        _lang = 'en';
         return { translations: {}, lang: _lang };
     }
     if (_translations === undefined) {
@@ -88,7 +88,7 @@ function translateElementsBySelector(translations, selector, key) {
  */
 export async function translating(targetScope, source) {
     let { translations, lang } = await getTranslationsConfig();
-    if (lang === 'zh-cn') {
+    if (lang === 'en') {
         return source;
     }
 
@@ -145,7 +145,7 @@ export async function translating(targetScope, source) {
  */
 export async function switchLanguage(targetScope, source) {
     const { translations, lang } = await getTranslationsConfig()
-    if (lang === 'zh-cn') {
+    if (lang === 'en') {
         return source;
     }
 
@@ -157,7 +157,7 @@ export async function switchLanguage(targetScope, source) {
  */
 export async function executeTranslation() {
     const { translations, lang } = await getTranslationsConfig();
-    if (lang === 'zh-cn') {
+    if (lang === 'en') {
         return;
     }
 
