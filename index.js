@@ -16,7 +16,7 @@ import {SheetBase} from "./core/table/base.js";
 import { Cell } from "./core/table/cell.js";
 
 
-console.log("______________________记忆插件：开始加载______________________")
+console.log("______________________Memory Plugin: Loading Start______________________")
 
 const VERSION = '2.2.0'
 
@@ -26,9 +26,9 @@ const editErrorInfo = {
 }
 
 /**
- * 修复值中不正确的转义单引号
- * @param {*} value
- * @returns
+ * Fixes incorrectly escaped single quotes in values.
+ * @param {*} value The value to fix.
+ * @returns {*} The value with corrected single quotes.
  */
 function fixUnescapedSingleQuotes(value) {
     if (typeof value === 'string') {
@@ -45,22 +45,22 @@ function fixUnescapedSingleQuotes(value) {
 }
 
 /**
- * 通过表格索引查找表格结构
- * @param {number} index 表格索引
- * @returns 此索引的表格结构
+ * Finds the table structure by table index.
+ * @param {number} index The table index.
+ * @returns {object} The table structure for this index.
  */
 export function findTableStructureByIndex(index) {
     return USER.tableBaseSetting.tableStructure[index];
 }
 
 /**
- * 检查数据是否为Sheet实例，不是则转换为新的Sheet实例
- * @param {Object[]} dataTable 所有表格对象数组
+ * Checks if data is a Sheet instance; if not, converts it to a new Sheet instance.
+ * @param {Object[]} dataTable An array of all table objects.
  */
 function checkPrototype(dataTable) {
-    // 旧的Table实例检查逻辑已被移除
-    // 现在使用新的Sheet类处理表格数据
-    // 这个函数保留是为了兼容旧代码调用，但内部逻辑已更新
+    // Old Table instance check logic has been removed.
+    // New Sheet class is now used to handle table data.
+    // This function is kept for compatibility with old code calls, but internal logic has been updated.
     return dataTable;
 }
 
@@ -71,16 +71,16 @@ export function buildSheetsByTemplates(targetPiece) {
     templates.forEach(template => {
         if(template.enable === false) return
 
-        // 检查 template 结构
+        // Check template structure
         if (!template || !template.hashSheet || !Array.isArray(template.hashSheet) || template.hashSheet.length === 0 || !Array.isArray(template.hashSheet[0]) || !template.cellHistory || !Array.isArray(template.cellHistory)) {
-            console.error(`[Memory Enhancement] 在 buildSheetsByTemplates 中遇到无效的模板结构 (缺少 hashSheet 或 cellHistory)。跳过模板:`, template);
-            return; // 跳过处理此模板
+            console.error(`[Memory Enhancement] Encountered invalid template structure in buildSheetsByTemplates (missing hashSheet or cellHistory). Skipping template:`, template);
+            return; // Skip processing this template
         }
         try {
             const newSheet = BASE.createChatSheetByTemp(template);
             newSheet.save(targetPiece);
         } catch (error) {
-            EDITOR.error(`[Memory Enhancement] 从模板创建或保存 sheet 时出错:`, error.message, error);
+            EDITOR.error(`[Memory Enhancement] Error creating or saving sheet from template:`, error.message, error);
         }
     })
     BASE.updateSelectBySheetStatus()
@@ -88,8 +88,8 @@ export function buildSheetsByTemplates(targetPiece) {
 }
 
 /**
- * 转化旧表格为sheets
- * @param {DERIVED.Table[]} oldTableList 旧表格数据
+ * Converts old tables to new sheets.
+ * @param {DERIVED.Table[]} oldTableList Old table data.
  */
 export function convertOldTablesToNewSheets(oldTableList, targetPiece) {
     //USER.getChatPiece().hash_sheets = {};
@@ -100,16 +100,16 @@ export function convertOldTablesToNewSheets(oldTableList, targetPiece) {
         const rows = valueSheet.length
         const targetSheetUid = BASE.sheetsData.context.find(sheet => sheet.name === oldTable.tableName)?.uid
         if (targetSheetUid) {
-            // 如果表格已存在，则更新表格数据
+            // If the table already exists, update its data
             const targetSheet = BASE.getChatSheet(targetSheetUid)
-            console.log("表格已存在，更新表格数据", targetSheet)
+            console.log("Table already exists, updating table data", targetSheet)
             targetSheet.rebuildHashSheetByValueSheet(valueSheet)
             targetSheet.save(targetPiece)
             addOldTablePrompt(targetSheet)
             sheets.push(targetSheet)
             continue
         }
-        // 如果表格未存在，则创建新的表格
+        // If the table does not exist, create a new table
         const newSheet = BASE.createChatSheet(cols, rows);
         newSheet.name = oldTable.tableName
         newSheet.domain = SheetBase.SheetDomain.chat
@@ -121,7 +121,7 @@ export function convertOldTablesToNewSheets(oldTableList, targetPiece) {
         newSheet.triggerSendDeep = 1
 
         addOldTablePrompt(newSheet)
-        newSheet.data.description = `${oldTable.note}\n${oldTable.initNode}\n${oldTable.insertNode}\n${oldTable.updateNode}\n${oldTable.deleteNode}`
+        newSheet.data.description = `${oldTable.note}\n${oldTable.initNode}\n${oldTable.updateNode}\n${oldTable.deleteNode}`
 
         valueSheet.forEach((row, rowIndex) => {
             row.forEach((value, colIndex) => {
@@ -134,17 +134,17 @@ export function convertOldTablesToNewSheets(oldTableList, targetPiece) {
         sheets.push(newSheet)
     }
     // USER.saveChat()
-    console.log("转换旧表格数据为新表格数据", sheets)
+    console.log("Converted old table data to new table data", sheets)
     return sheets
 }
 
 /**
- * 添加旧表格结构中的提示词到新的表格中
- * @param {*} sheet 表格对象
+ * Adds prompts from the old table structure to the new table.
+ * @param {*} sheet The table object.
  */
 function addOldTablePrompt(sheet) {
     const tableStructure = USER.tableBaseSetting.tableStructure.find(table => table.tableName === sheet.name)
-    console.log("添加旧表格提示词", tableStructure, USER.tableBaseSetting.tableStructure, sheet.name)
+    console.log("Adding old table prompts", tableStructure, USER.tableBaseSetting.tableStructure, sheet.name)
     if (!tableStructure) return false
     const source = sheet.source
     source.required = tableStructure.Required
@@ -156,13 +156,13 @@ function addOldTablePrompt(sheet) {
 }
 
 /**
- * 寻找下一个含有表格数据的消息，如寻找不到，则返回null
- * @param startIndex 开始寻找的索引
- * @param isIncludeStartIndex 是否包含开始索引
- * @returns 寻找到的mes数据
+ * Finds the next message containing table data. Returns null if not found.
+ * @param {number} startIndex The index to start searching from.
+ * @param {boolean} [isIncludeStartIndex=false] Whether to include the start index in the search.
+ * @returns {{index: number, chat: object|null}} The found message data.
  */
 export function findNextChatWhitTableData(startIndex, isIncludeStartIndex = false) {
-    if (startIndex === -1) return { index: - 1, chat: null }
+    if (startIndex === -1) return { index: -1, chat: null }
     const chat = USER.getContext().chat
     for (let i = isIncludeStartIndex ? startIndex : startIndex + 1; i < chat.length; i++) {
         if (chat[i].is_user === false && chat[i].dataTable) {
@@ -170,51 +170,51 @@ export function findNextChatWhitTableData(startIndex, isIncludeStartIndex = fals
             return { index: i, chat: chat[i] }
         }
     }
-    return { index: - 1, chat: null }
+    return { index: -1, chat: null }
 }
 
 /**
- * 搜寻最后一个含有表格数据的消息，并生成提示词
- * @returns 生成的完整提示词
+ * Searches for the last message containing table data and generates prompts.
+ * @returns {string} The generated complete prompt.
  */
 export function initTableData(eventData) {
     const allPrompt = USER.tableBaseSetting.message_template.replace('{{tableData}}', getTablePrompt(eventData))
-    const promptContent = replaceUserTag(allPrompt)  //替换所有的<user>标签
-    console.log("完整提示", promptContent)
+    const promptContent = replaceUserTag(allPrompt)  // Replaces all <user> tags
+    console.log("Complete prompt", promptContent)
     return promptContent
 }
 
 /**
- * 获取表格相关提示词
- * @returns {string} 表格相关提示词
+ * Gets prompts related to tables.
+ * @returns {string} Table-related prompts.
  */
 export function getTablePrompt(eventData, isPureData = false) {
     const lastSheetsPiece = BASE.getReferencePiece()
     if(!lastSheetsPiece) return ''
-    console.log("获取到的参考表格数据", lastSheetsPiece)
+    console.log("Obtained reference table data", lastSheetsPiece)
     return getTablePromptByPiece(lastSheetsPiece, isPureData)
 }
 
 /**
- * 通过piece获取表格相关提示词
- * @param {Object} piece 聊天片段
- * @returns {string} 表格相关提示词
+ * Gets prompts related to tables via a piece.
+ * @param {object} piece The chat piece.
+ * @returns {string} Table-related prompts.
  */
 export function getTablePromptByPiece(piece, isPureData = false) {
     const {hash_sheets} = piece
     const sheets = BASE.hashSheetsToSheets(hash_sheets)
         .filter(sheet => sheet.enable)
         .filter(sheet => sheet.sendToContext !== false);
-    console.log("构建提示词时的信息 (已过滤)", hash_sheets, sheets)
+    console.log("Information during prompt construction (filtered)", hash_sheets, sheets)
     const customParts = isPureData ? ['title', 'headers', 'rows'] : ['title', 'node', 'headers', 'rows', 'editRules'];
     const sheetDataPrompt = sheets.map((sheet, index) => sheet.getTableText(index, customParts, piece)).join('\n')
     return sheetDataPrompt
 }
 
 /**
- * 将匹配到的整体字符串转化为单个语句的数组
- * @param {string[]} matches 匹配到的整体字符串
- * @returns 单条执行语句数组
+ * Converts matched overall strings into an array of individual statements.
+ * @param {string[]} matches The matched overall strings.
+ * @returns {Array<object>} An array of individual execution statements.
  */
 function handleTableEditTag(matches) {
     const functionRegex = /(updateRow|insertRow|deleteRow)\(/g;
@@ -225,11 +225,11 @@ function handleTableEditTag(matches) {
         while ((match = functionRegex.exec(input)) !== null) {
             positions.push({
                 index: match.index,
-                name: match[1].replace("Row", "") // 转换成 update/insert/delete
+                name: match[1].replace("Row", "") // Convert to update/insert/delete
             });
         }
 
-        // 合并函数片段和位置
+        // Combine function snippets and positions
         for (let i = 0; i < positions.length; i++) {
             const start = positions[i].index;
             const end = i + 1 < positions.length ? positions[i + 1].index : input.length;
@@ -237,7 +237,7 @@ function handleTableEditTag(matches) {
             const lastParenIndex = fullCall.lastIndexOf(")");
 
             if (lastParenIndex !== -1) {
-                const sliced = fullCall.slice(0, lastParenIndex); // 去掉最后一个 )
+                const sliced = fullCall.slice(0, lastParenIndex); // Remove the last ')'
                 const argsPart = sliced.slice(sliced.indexOf("(") + 1);
                 const args = argsPart.match(/("[^"]*"|\{.*\}|[0-9]+)/g)?.map(s => s.trim());
                 if(!args) continue
@@ -254,10 +254,10 @@ function handleTableEditTag(matches) {
 }
 
 /**
- * 检查表格编辑字符串是否改变
- * @param {Chat} chat 单个聊天对象
- * @param {string[]} matches 新的匹配对象
- * @returns
+ * Checks if the table edit string has changed.
+ * @param {Chat} chat A single chat object.
+ * @param {string[]} matches New matched objects.
+ * @returns {boolean} True if changed, false otherwise.
  */
 function isTableEditStrChanged(chat, matches) {
     if (chat.tableEditMatches != null && chat.tableEditMatches.join('') === matches.join('')) {
@@ -268,7 +268,7 @@ function isTableEditStrChanged(chat, matches) {
 }
 
 /**
- * 清除表格中的所有空行
+ * Clears all empty rows in the table.
  */
 function clearEmpty() {
     DERIVED.any.waitingTable.forEach(table => {
@@ -279,97 +279,97 @@ function clearEmpty() {
 
 
 /**
- * 处理文本内的表格编辑事件
- * @param {Chat} chat 单个聊天对象
- * @param {number} mesIndex 修改的消息索引
- * @param {boolean} ignoreCheck 是否跳过重复性检查
- * @returns
+ * Handles table editing events within text.
+ * @param {Chat} chat A single chat object.
+ * @param {number} [mesIndex=-1] The index of the message to modify.
+ * @param {boolean} [ignoreCheck=false] Whether to skip duplicate checks.
  */
 export function handleEditStrInMessage(chat, mesIndex = -1, ignoreCheck = false) {
     parseTableEditTag(chat, mesIndex, ignoreCheck)
-    updateSystemMessageTableStatus();   // 新增代码，将表格数据状态更新到系统消息中
+    updateSystemMessageTableStatus();   // Added code to update table data status in system messages
     //executeTableEditTag(chat, mesIndex)
 }
 
 /**
- * 解析回复中的表格编辑标签
- * @param {*} piece 单个聊天对象
- * @param {number} mesIndex 修改的消息索引
- * @param {boolean} ignoreCheck 是否跳过重复性检查
+ * Parses table editing tags in the reply.
+ * @param {*} piece A single chat object.
+ * @param {number} [mesIndex=-1] The index of the message to modify.
+ * @param {boolean} [ignoreCheck=false] Whether to skip duplicate checks.
  */
 export function parseTableEditTag(piece, mesIndex = -1, ignoreCheck = false) {
     const { matches } = getTableEditTag(piece.mes)
     if (!ignoreCheck && !isTableEditStrChanged(piece, matches)) return false
     const tableEditActions = handleTableEditTag(matches)
     tableEditActions.forEach((action, index) => tableEditActions[index].action = classifyParams(formatParams(action.param)))
-    console.log("解析到的表格编辑指令", tableEditActions)
+    console.log("Parsed table edit instructions", tableEditActions)
 
-    // 获取上一个表格数据
+    // Get the previous table data
     const { piece: prePiece } = mesIndex === -1 ? BASE.getLastSheetsPiece(1) : BASE.getLastSheetsPiece(mesIndex - 1, 1000, false)
     const sheets = BASE.hashSheetsToSheets(prePiece.hash_sheets).filter(sheet => sheet.enable)
-    console.log("执行指令时的信息", sheets)
+    console.log("Information during instruction execution", sheets)
     for (const EditAction of sortActions(tableEditActions)) {
         executeAction(EditAction, sheets)
     }
     sheets.forEach(sheet => sheet.save(piece, true))
-    console.log("聊天模板：", BASE.sheetsData.context)
-    console.log("获取到的表格数据", prePiece)
-    console.log("测试总chat", USER.getContext().chat)
+    console.log("Chat template:", BASE.sheetsData.context)
+    console.log("Obtained table data", prePiece)
+    console.log("Total chat test", USER.getContext().chat)
     return true
 }
 
 /**
- * 直接通过编辑指令字符串执行操作
- * @param {string[]} matches 编辑指令字符串
+ * Directly executes operations via edit instruction strings.
+ * @param {string[]} matches Edit instruction strings.
+ * @param {*} referencePiece The reference piece.
  */
 export function executeTableEditActions(matches, referencePiece) {
     const tableEditActions = handleTableEditTag(matches)
     tableEditActions.forEach((action, index) => tableEditActions[index].action = classifyParams(formatParams(action.param)))
-    console.log("解析到的表格编辑指令", tableEditActions)
+    console.log("Parsed table edit instructions", tableEditActions)
 
-    // 核心修复：不再信任传入的 referencePiece.hash_sheets，而是直接从 BASE 获取当前激活的、唯一的 Sheet 实例。
+    // Core fix: No longer trust the passed referencePiece.hash_sheets, but directly obtain the currently active, unique Sheet instances from BASE.
     const sheets = BASE.getChatSheets().filter(sheet => sheet.enable)
     if (!sheets || sheets.length === 0) {
-        console.error("executeTableEditActions: 未找到任何启用的表格实例，操作中止。");
+        console.error("executeTableEditActions: No enabled table instances found, operation aborted.");
         return false;
     }
 
-    console.log("执行指令时的信息 (来自 BASE.getChatSheets)", sheets)
+    console.log("Information during instruction execution (from BASE.getChatSheets)", sheets)
     for (const EditAction of sortActions(tableEditActions)) {
         executeAction(EditAction, sheets)
     }
     
-    // 核心修复：确保修改被保存到当前最新的聊天片段中。
+    // Core fix: Ensure modifications are saved to the current latest chat piece.
     const { piece: currentPiece } = USER.getChatPiece();
     if (!currentPiece) {
-        console.error("executeTableEditActions: 无法获取当前聊天片段，保存操作失败。");
+        console.error("executeTableEditActions: Failed to get current chat piece, save operation failed.");
         return false;
     }
     sheets.forEach(sheet => sheet.save(currentPiece, true))
 
-    console.log("聊天模板：", BASE.sheetsData.context)
-    console.log("测试总chat", USER.getContext().chat)
-    return true // 返回 true 表示成功
+    console.log("Chat template:", BASE.sheetsData.context)
+    console.log("Total chat test", USER.getContext().chat)
+    return true // Return true to indicate success
 }
 
 /**
- * 执行单个action指令
+ * Executes a single action instruction.
  */
 function executeAction(EditAction, sheets) {
     const action = EditAction.action
     const sheet = sheets[action.tableIndex]
     if (!sheet) {
-        console.error("表格不存在，无法执行编辑操作", EditAction);
+        console.error("Table does not exist, cannot execute edit operation", EditAction);
         return -1;
     }
 
-    // 在所有操作前，深度清理一次action.data
+    // Deeply clean action.data before all operations
     if (action.data) {
         action.data = fixUnescapedSingleQuotes(action.data);
     }
     switch (EditAction.type) {
         case 'update':
-            // 执行更新操作
+            // Execute update operation
             const rowIndex = action.rowIndex ? parseInt(action.rowIndex):0
             if(rowIndex >= sheet.getRowCount()-1) return executeAction({...EditAction, type:'insert'}, sheets)
             if(!action?.data) return
@@ -380,7 +380,7 @@ function executeAction(EditAction, sheets) {
             })
             break
         case 'insert': {
-            // 执行插入操作
+            // Execute insert operation
             const cell = sheet.findCellByPosition(sheet.getRowCount() - 1, 0)
             if (!cell) return -1
             cell.newAction(Cell.CellAction.insertDownRow, {}, false)
@@ -394,25 +394,25 @@ function executeAction(EditAction, sheets) {
         }
             break
         case 'delete':
-            // 执行删除操作
+            // Execute delete operation
             const deleteRow = parseInt(action.rowIndex) + 1
             const cell = sheet.findCellByPosition(deleteRow, 0)
             if (!cell) return -1
             cell.newAction(Cell.CellAction.deleteSelfRow, {}, false)
             break
     }
-    console.log("执行表格编辑操作", EditAction)
+    console.log("Executing table edit operation", EditAction)
     return 1
 }
 
 
 /**
- * 为actions排序
- * @param {Object[]} actions 要排序的actions
- * @returns 排序后的actions
+ * Sorts actions.
+ * @param {Object[]} actions The actions to sort.
+ * @returns {Array<object>} The sorted actions.
  */
 function sortActions(actions) {
-    // 定义排序优先级
+    // Define sorting priority
     const priority = {
         update: 0,
         insert: 1,
@@ -422,10 +422,10 @@ function sortActions(actions) {
 }
 
 /**
- * 格式化参数
- * @description 将参数数组中的字符串转换为数字或对象
- * @param {string[]} paramArray
- * @returns
+ * Formats parameters.
+ * @description Converts strings in the parameter array to numbers or objects.
+ * @param {string[]} paramArray The array of parameters.
+ * @returns {Array<*>} The formatted parameters.
  */
 function formatParams(paramArray) {
     return paramArray.map(item => {
@@ -445,15 +445,15 @@ function formatParams(paramArray) {
             return parsed;
         }
 
-        // 其他情况都返回字符串
+        // Return strings for all other cases
         return trimmed;
     });
 }
 
 /**
- * 分类参数
- * @param {string[]} param 参数
- * @returns {Object} 分类后的参数对象
+ * Classifies parameters.
+ * @param {string[]} param The parameter.
+ * @returns {Object} The classified parameter object.
  */
 function classifyParams(param) {
     const action = {};
@@ -469,13 +469,13 @@ function classifyParams(param) {
 }
 
 /**
- * 执行回复中得编辑标签
- * @param {Chat} chat 单个聊天对象
- * @param {number} mesIndex 修改的消息索引
+ * Executes table edit tags in the reply.
+ * @param {Chat} chat A single chat object.
+ * @param {number} [mesIndex=-1] The index of the message to modify.
  */
 function executeTableEditTag(chat, mesIndex = -1, ignoreCheck = false) {
 
-    // 如果不是最新的消息，则更新接下来的表格
+    // If it's not the latest message, update the following tables
     if (mesIndex !== -1) {
         const { index, chat: nextChat } = findNextChatWhitTableData(mesIndex)
         if (index !== -1) handleEditStrInMessage(nextChat, index, true)
@@ -483,15 +483,15 @@ function executeTableEditTag(chat, mesIndex = -1, ignoreCheck = false) {
 }
 
 /**
- * 干运行获取插入action的插入位置和表格插入更新内容
+ * Dry run to get insertion position and table insertion update content for insert actions.
  */
 function dryRunExecuteTableEditTag() {
-    // TODO 使用新的Sheet系统处理表格编辑
+    // TODO Handle table editing with the new Sheet system
 }
 
 /**
- * 获取生成的操作函数字符串
- * @returns 生成的操作函数字符串
+ * Gets the generated operation function string.
+ * @returns {string} The generated operation function string.
  */
 export function getTableEditActionsStr() {
     const tableEditActionsStr = DERIVED.any.tableEditActions.filter(action => action.able && action.type !== 'Comment').map(tableEditAction => tableEditAction.format()).join('\n')
@@ -499,17 +499,18 @@ export function getTableEditActionsStr() {
 }
 
 /**
- * 替换聊天中的TableEdit标签内的内容
- * @param {*} chat 聊天对象
+ * Replaces the content within the TableEdit tag in the chat.
+ * @param {*} chat The chat object.
+ * @param {*} newContent The new content to replace with.
  */
 export function replaceTableEditTag(chat, newContent) {
-    // 处理 mes
+    // Process mes
     if (/<tableEdit>.*?<\/tableEdit>/gs.test(chat.mes)) {
         chat.mes = chat.mes.replace(/<tableEdit>(.*?)<\/tableEdit>/gs, `<tableEdit>${newContent}</tableEdit>`);
     } else {
         chat.mes += `\n<tableEdit>${newContent}</tableEdit>`;
     }
-    // 处理 swipes
+    // Process swipes
     if (chat.swipes != null && chat.swipe_id != null)
         if (/<tableEdit>.*?<\/tableEdit>/gs.test(chat.swipes[chat.swipe_id])) {
             chat.swipes[chat.swipe_id] = chat.swipes[chat.swipe_id].replace(/<tableEdit>(.*?)<\/tableEdit>/gs, `<tableEdit>\n${newContent}\n</tableEdit>`);
@@ -520,8 +521,8 @@ export function replaceTableEditTag(chat, newContent) {
 }
 
 /**
- * 读取设置中的注入角色
- * @returns 注入角色
+ * Reads injected roles from settings.
+ * @returns {string} The injected role.
  */
 function getMesRole() {
     switch (USER.tableBaseSetting.injection_mode) {
@@ -535,31 +536,31 @@ function getMesRole() {
 }
 
 /**
- * 注入表格总体提示词
- * @param {*} eventData
- * @returns
+ * Injects the overall table prompt.
+ * @param {*} eventData The event data.
+ * @returns {Promise<void>}
  */
 async function onChatCompletionPromptReady(eventData) {
     try {
-        // 优先处理分步填表模式
+        // Prioritize step-by-step table filling mode
         if (USER.tableBaseSetting.step_by_step === true) {
-            // 仅当插件和AI读表功能开启时才注入
+            // Inject only when the plugin and AI read table functions are enabled
             if (USER.tableBaseSetting.isExtensionAble === true && USER.tableBaseSetting.isAiReadTable === true) {
-                const tableData = getTablePrompt(eventData, true); // 获取纯净数据
-                if (tableData) { // 确保有内容可注入
-                    const finalPrompt = `以下是通过表格记录的当前场景信息以及历史记录信息，你需要以此为参考进行思考：\n${tableData}`;
+                const tableData = getTablePrompt(eventData, true); // Get pure data
+                if (tableData) { // Ensure there's content to inject
+                    const finalPrompt = `The following is the current scene information and historical records recorded through tables. You need to use this as a reference for your thinking:\n${tableData}`;
                     if (USER.tableBaseSetting.deep === 0) {
                         eventData.chat.push({ role: getMesRole(), content: finalPrompt });
                     } else {
                         eventData.chat.splice(-USER.tableBaseSetting.deep, 0, { role: getMesRole(), content: finalPrompt });
                     }
-                    console.log("分步填表模式：注入只读表格数据", eventData.chat);
+                    console.log("Step-by-step table filling mode: Injecting read-only table data", eventData.chat);
                 }
             }
-            return; // 处理完分步模式后直接退出，不执行后续的常规注入
+            return; // Exit directly after handling step-by-step mode, do not execute subsequent regular injections
         }
 
-        // 常规模式的注入逻辑
+        // Regular mode injection logic
         if (eventData.dryRun === true ||
             USER.tableBaseSetting.isExtensionAble === false ||
             USER.tableBaseSetting.isAiReadTable === false ||
@@ -567,7 +568,7 @@ async function onChatCompletionPromptReady(eventData) {
             return;
         }
 
-        console.log("生成提示词前", USER.getContext().chat)
+        console.log("Before prompt generation", USER.getContext().chat)
         const promptContent = initTableData(eventData)
         if (USER.tableBaseSetting.deep === 0)
             eventData.chat.push({ role: getMesRole(), content: promptContent })
@@ -576,31 +577,31 @@ async function onChatCompletionPromptReady(eventData) {
 
         updateSheetsView()
     } catch (error) {
-        EDITOR.error(`记忆插件：表格数据注入失败\n原因：`,error.message, error);
+        EDITOR.error(`Memory Plugin: Failed to inject table data\nReason:`,error.message, error);
     }
-    console.log("注入表格总体提示词", eventData.chat)
+    console.log("Injecting overall table prompt", eventData.chat)
 }
 
 /**
-  * 宏获取提示词
+  * Macro to get prompts.
   */
 function getMacroPrompt() {
     try {
         if (USER.tableBaseSetting.isExtensionAble === false || USER.tableBaseSetting.isAiReadTable === false) return ""
         if (USER.tableBaseSetting.step_by_step === true) {
             const promptContent = replaceUserTag(getTablePrompt(undefined, true))
-            return `以下是通过表格记录的当前场景信息以及历史记录信息，你需要以此为参考进行思考：\n${promptContent}`
+            return `The following is the current scene information and historical records recorded through tables. You need to use this as a reference for your thinking:\n${promptContent}`
         }
         const promptContent = initTableData()
         return promptContent
     }catch (error) {
-        EDITOR.error(`记忆插件：宏提示词注入失败\n原因：`, error.message, error);
+        EDITOR.error(`Memory Plugin: Failed to inject macro prompt\nReason:`, error.message, error);
         return ""
     }
 }
 
 /**
-  * 宏获取表格提示词
+  * Macro to get table prompts.
   */
 function getMacroTablePrompt() {
     try {
@@ -612,15 +613,15 @@ function getMacroTablePrompt() {
         const promptContent = replaceUserTag(getTablePrompt())
         return promptContent
     }catch (error) {
-        EDITOR.error(`记忆插件：宏提示词注入失败\n原因：`, error.message, error);
+        EDITOR.error(`Memory Plugin: Failed to inject macro prompt\nReason:`, error.message, error);
         return ""
     }
 }
 
 /**
- * 去掉编辑指令两端的空格和注释标签
- * @param {string} str 输入的编辑指令字符串
- * @returns
+ * Removes leading and trailing spaces and comment tags from edit instructions.
+ * @param {string} str The input edit instruction string.
+ * @returns {string} The trimmed string.
  */
 function trimString(str) {
     const str1 = str.trim()
@@ -633,9 +634,9 @@ function trimString(str) {
 }
 
 /**
- * 获取表格的tableEdit标签内的内容
- * @param {string} mes 消息正文字符串
- * @returns {matches} 匹配到的内容数组
+ * Gets the content within the table's tableEdit tag.
+ * @param {string} mes The message body string.
+ * @returns {{matches: string[]}} The array of matched content.
  */
 
 export function getTableEditTag(mes) {
@@ -650,8 +651,8 @@ export function getTableEditTag(mes) {
 }
 
 /**
- * 消息编辑时触发
- * @param this_edit_mes_id 此消息的ID
+ * Triggered when a message is edited.
+ * @param {number} this_edit_mes_id The ID of this message being edited.
  */
 async function onMessageEdited(this_edit_mes_id) {
     if (USER.tableBaseSetting.isExtensionAble === false || USER.tableBaseSetting.step_by_step === true) return
@@ -660,27 +661,27 @@ async function onMessageEdited(this_edit_mes_id) {
     try {
         handleEditStrInMessage(chat, parseInt(this_edit_mes_id))
     } catch (error) {
-        EDITOR.error("记忆插件：表格编辑失败\n原因：", error.message, error)
+        EDITOR.error("Memory Plugin: Table edit failed\nReason:", error.message, error)
     }
     updateSheetsView()
 }
 
 /**
- * 消息接收时触发
- * @param {number} chat_id 此消息的ID
+ * Triggered when a message is received.
+ * @param {number} chat_id The ID of this message.
  */
 async function onMessageReceived(chat_id) {
     if (USER.tableBaseSetting.isExtensionAble === false) return
     if (USER.tableBaseSetting.step_by_step === true && USER.getContext().chat.length > 2) {
-        TableTwoStepSummary("auto");  // 请勿使用await，否则会导致主进程阻塞引起的连锁bug
+        TableTwoStepSummary("auto");  // Do not use await, otherwise it will cause chain bugs due to blocking the main process
     } else {
         if (USER.tableBaseSetting.isAiWriteTable === false) return
         const chat = USER.getContext().chat[chat_id];
-        console.log("收到消息", chat_id)
+        console.log("Message received", chat_id)
         try {
             handleEditStrInMessage(chat)
         } catch (error) {
-            EDITOR.error("记忆插件：表格自动更改失败\n原因：", error.message, error)
+            EDITOR.error("Memory Plugin: Automatic table modification failed\nReason:", error.message, error)
         }
     }
 
@@ -688,9 +689,9 @@ async function onMessageReceived(chat_id) {
 }
 
 /**
- * 解析字符串中所有 {{GET::...}} 宏
- * @param {string} text - 需要解析的文本
- * @returns {string} - 解析并替换宏之后的文本
+ * Resolves all {{GET::...}} macros in a string.
+ * @param {string} text The text to parse.
+ * @returns {string} The text after parsing and replacing macros.
  */
 function resolveTableMacros(text) {
     if (typeof text !== 'string' || !text.includes('{{GET::')) {
@@ -702,29 +703,29 @@ function resolveTableMacros(text) {
         const targetTable = sheets.find(t => t.name.trim() === tableName.trim());
 
         if (!targetTable) {
-            return `<span style="color: red">[GET: 未找到表格 "${tableName}"]</span>`;
+            return `<span style="color: red">[GET: Table "${tableName}" not found]</span>`;
         }
 
         try {
             const cell = targetTable.getCellFromAddress(cellAddress);
             const cellValue = cell ? cell.data.value : undefined;
-            return cellValue !== undefined ? cellValue : `<span style="color: orange">[GET: 在 "${tableName}" 中未找到单元格 "${cellAddress}"]</span>`;
+            return cellValue !== undefined ? cellValue : `<span style="color: orange">[GET: Cell "${cellAddress}" not found in "${tableName}"]</span>`;
         } catch (error) {
             console.error(`Error resolving GET macro for ${tableName}:${cellAddress}`, error);
-            return `<span style="color: red">[GET: 处理时出错]</span>`;
+            return `<span style="color: red">[GET: Error during processing]</span>`;
         }
     });
 }
 
 /**
- * 聊天变化时触发
+ * Triggered on chat changes.
  */
 async function onChatChanged() {
     try {
-        // 更新表格视图
+        // Update table view
         updateSheetsView();
 
-        // 在聊天消息中渲染宏
+        // Render macros in chat messages
         document.querySelectorAll('.mes_text').forEach(mes => {
             if (mes.dataset.macroProcessed) return;
 
@@ -738,61 +739,62 @@ async function onChatChanged() {
         });
 
     } catch (error) {
-        EDITOR.error("记忆插件：处理聊天变更失败\n原因：", error.message, error)
+        EDITOR.error("Memory Plugin: Failed to process chat changes\nReason:", error.message, error)
     }
 }
 
 
 /**
- * 滑动切换消息事件
+ * Swipe message switching event.
  */
 async function onMessageSwiped(chat_id) {
     if (USER.tableBaseSetting.isExtensionAble === false || USER.tableBaseSetting.isAiWriteTable === false) return
     const chat = USER.getContext().chat[chat_id];
-    console.log("滑动切换消息", chat)
+    console.log("Swiping messages", chat)
     if (!chat.swipe_info[chat.swipe_id]) return
     try {
         handleEditStrInMessage(chat)
     } catch (error) {
-        EDITOR.error("记忆插件：swipe切换失败\n原因：", error.message, error)
+        EDITOR.error("Memory Plugin: Swipe failed\nReason:", error.message, error)
     }
 
     updateSheetsView()
 }
 
 /**
- * 恢复指定层数的表格
+ * Restores tables for a specified number of levels.
+ * @param {number} deep The number of levels to undo.
  */
 export async function undoSheets(deep) {
     const {piece, deep:findDeep} = BASE.getLastSheetsPiece(deep)
     if(findDeep === -1) return 
-    console.log("撤回表格数据", piece, findDeep)
+    console.log("Undoing table data", piece, findDeep)
     handleEditStrInMessage(piece, findDeep, true)
     updateSheetsView()
 }
 
 /**
- * 更新新表格视图
- * @description 更新表格视图，使用新的Sheet系统
+ * Updates the new table view.
+ * @description Updates the table view using the new Sheet system.
  * @returns {Promise<*[]>}
  */
 async function updateSheetsView(mesId) {
     try{
-       // 刷新表格视图
-        console.log("========================================\n更新表格视图")
+       // Refresh table view
+        console.log("========================================\nUpdating table view")
         refreshTempView(true)
-        console.log("========================================\n更新表格内容视图")
+        console.log("========================================\nUpdating table content view")
         BASE.refreshContextView(mesId)
 
-        // 更新系统消息中的表格状态
+        // Update table status in system messages
         updateSystemMessageTableStatus(); 
     }catch (error) {
-        EDITOR.error("记忆插件：更新表格视图失败\n原因：", error.message, error)
+        EDITOR.error("Memory Plugin: Failed to update table view\nReason:", error.message, error)
     }
 }
 
 /**
- * 打开表格drawer
+ * Opens the table drawer.
  */
 export function openDrawer() {
     const drawer = $('#table_database_settings_drawer .drawer-toggle')
@@ -804,123 +806,124 @@ export function openDrawer() {
 }
 
 /**
- * 获取是新版还是旧版drawer
+ * Checks if it's the new or old version of the drawer.
+ * @returns {boolean} True if it's the new version, false otherwise.
  */
 export function isDrawerNewVersion() {
     return !!applicationFunctionManager.doNavbarIconClick
 }
 
 jQuery(async () => {
-    // 注册API
+    // Register APIs
     window.stMemoryEnhancement = {
         ext_getAllTables,
         ext_exportAllTablesAsJson,
         VERSION,
     };
 
-    // 版本检查
+    // Version check
     fetch("http://api.muyoo.com.cn/check-version", {
         method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ clientVersion: VERSION, user: USER.getContext().name1 })
     }).then(res => res.json()).then(res => {
         if (res.success) {
             if (!res.isLatest) {
                 $("#tableUpdateTag").show()
-                $("#setting_button_new_tag").show() // 显示设置按钮的New标记
+                $("#setting_button_new_tag").show() // Show New tag for the settings button
             }
             if (res.toastr) EDITOR.warning(res.toastrText)
             if (res.message) $("#table_message_tip").html(res.message)
         }
     })
 
-    $('.extraMesButtons').append('<div title="查看表格" class="mes_button open_table_by_id">表格</div>');
+    $('.extraMesButtons').append('<div title="View Tables" class="mes_button open_table_by_id">Tables</div>');
 
-    // 分离手机和电脑事件
+    // Separate mobile and desktop events
     if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-        console.log("手机端")
-        // 手机端事件
+        console.log("Mobile device")
+        // Mobile device events
     } else {
-        console.log("电脑端")
-        // 电脑端事件
+        console.log("Desktop device")
+        // Desktop device events
         initTest();
     }
 
-    // 开始添加各部分的根DOM
-    // 添加表格编辑工具栏
+    // Start adding root DOMs for each part
+    // Add table editing toolbar
     $('#translation_container').after(await SYSTEM.getTemplate('index'));
-    // 添加顶部表格管理工具弹窗
+    // Add top table management pop-up
     $('#extensions-settings-button').after(await SYSTEM.getTemplate('appHeaderTableDrawer'));
 
-    // 应用程序启动时加载设置
+    // Load settings when the application starts
     loadSettings();
 
-    // 表格弹出窗
+    // Table pop-up
     $(document).on('click', '.open_table_by_id', function () {
         const messageId = parseInt($(this).closest('.mes').attr('mesid'))
         if (USER.getContext().chat[messageId].is_user === true) {
-            toastr.warning('用户消息不支持表格编辑')
+            toastr.warning('User messages do not support table editing')
             return
         }
         BASE.refreshContextView(messageId)
         openDrawer()
     })
 
-    // 注册宏
+    // Register macros
     USER.getContext().registerMacro("tablePrompt", () =>getMacroPrompt())
     USER.getContext().registerMacro("tableData", () =>getMacroTablePrompt())
     USER.getContext().registerMacro("GET_ALL_TABLES_JSON", () => {
         try {
             const jsonData = ext_exportAllTablesAsJson();
             if (Object.keys(jsonData).length === 0) {
-                return "{}"; // 如果没有数据，返回一个空的JSON对象
+                return "{}"; // If there is no data, return an empty JSON object
             }
-            // 返回JSON字符串，不带额外的格式化，以便在代码中直接使用
+            // Return JSON string without extra formatting, for direct use in code
             return JSON.stringify(jsonData);
         } catch (error) {
-            console.error("GET_ALL_TABLES_JSON 宏执行出错:", error);
-            EDITOR.error("导出所有表格数据时出错。","",error);
-            return "{}"; // 出错时返回空JSON对象
+            console.error("GET_ALL_TABLES_JSON macro execution error:", error);
+            EDITOR.error("Error exporting all table data.","",error);
+            return "{}"; // Return empty JSON object on error
         }
     });
 
-    // 设置表格编辑按钮
-    console.log("设置表格编辑按钮", applicationFunctionManager.doNavbarIconClick)
+    // Set table edit button
+    console.log("Setting table edit button", applicationFunctionManager.doNavbarIconClick)
     if (isDrawerNewVersion()) {
         $('#table_database_settings_drawer .drawer-toggle').on('click', applicationFunctionManager.doNavbarIconClick);
     }else{
         $('#table_drawer_content').attr('data-slide-toggle', 'hidden').css('display', 'none');
         $('#table_database_settings_drawer .drawer-toggle').on('click', openAppHeaderTableDrawer);
     }
-    // // 设置表格编辑按钮
+    // // Set table edit button
     // $(document).on('click', '.tableEditor_editButton', function () {
-    //     let index = $(this).data('index'); // 获取当前点击的索引
+    //     let index = $(this).data('index'); // Get the index of the currently clicked item
     //     openTableSettingPopup(index);
     // })
-    // 点击表格渲染样式设置按钮
+    // Click the table rendering style settings button
     $(document).on('click', '.tableEditor_renderButton', function () {
         openTableRendererPopup();
     })
-    // 点击打开查看表格日志按钮
+    // Click to open the view table log button
     $(document).on('click', '#table_debug_log_button', function () {
         openTableDebugLogPopup();
     })
-    // 对话数据表格弹出窗
+    // Chat data table pop-up
     $(document).on('click', '.open_table_by_id', function () {
         const messageId = $(this).closest('.mes').attr('mesid');
         initRefreshTypeSelector();
     })
-    // 设置表格开启开关
+    // Set table enable switch
     $(document).on('change', '.tableEditor_switch', function () {
-        let index = $(this).data('index'); // 获取当前点击的索引
+        let index = $(this).data('index'); // Get the index of the currently clicked item
         const tableStructure = findTableStructureByIndex(index);
         tableStructure.enable = $(this).prop('checked');
     })
 
-    initAppHeaderTableDrawer().then();  // 初始化表格编辑器
-    functionToBeRegistered()    // 注册用于调试的各种函数
+    initAppHeaderTableDrawer().then();  // Initialize table editor
+    functionToBeRegistered()    // Register various functions for debugging
 
-    executeTranslation(); // 执行翻译函数
+    executeTranslation(); // Execute translation function
 
-    // 监听主程序事件
+    // Listen to main program events
     APP.eventSource.on(APP.event_types.MESSAGE_RECEIVED, onMessageReceived);
     APP.eventSource.on(APP.event_types.CHAT_COMPLETION_PROMPT_READY, onChatCompletionPromptReady);
     APP.eventSource.on(APP.event_types.CHAT_CHANGED, onChatChanged);
@@ -929,5 +932,5 @@ jQuery(async () => {
     APP.eventSource.on(APP.event_types.MESSAGE_DELETED, onChatChanged);
 
     
-    console.log("______________________记忆插件：加载完成______________________")
+    console.log("______________________Memory Plugin: Loading Complete______________________")
 });
