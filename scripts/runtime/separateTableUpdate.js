@@ -90,7 +90,7 @@ export async function TableTwoStepSummary(mode) {
     console.log('Chat snippet to be filled:', todoChats);
 
     // Check if confirmation is required before execution
-    const popupContentHtml = `<p>A total of ${todoChats.length} characters of text, start independent table filling?</p>`;
+    const popupContentHtml = `A total of ${todoChats.length} characters of text, start independent table filling?`;
     // Removed HTML and logic related to template selection
 
     const popupId = 'stepwiseSummaryConfirm';
@@ -160,13 +160,13 @@ export async function manualSummaryChat(todoChats, confirmResult) {
         EDITOR.error("Cannot get the chat snippet for the operation, operation aborted.");
         return;
     }
-    
+
     // Table data
     const originText = getTablePrompt(referencePiece);
 
     // Overall table prompt
     const finalPrompt = initTableData(); // Get table-related prompts
-    
+
     // Settings
     const useMainApiForStepByStep = USER.tableBaseSetting.step_by_step_use_main_api ?? true;
     const isSilentMode = confirmResult === 'dont_remind_active';
@@ -199,5 +199,5 @@ export async function manualSummaryChat(todoChats, confirmResult) {
         console.log('Failed or canceled to execute incremental independent table filling: ', `(${todoChats.length}) `, toBeExecuted);
         return false;
     }
-    
+
 }
