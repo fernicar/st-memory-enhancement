@@ -72,7 +72,7 @@ The Memory Enhancement Plugin injects powerful **structured long-term memory** i
         <img src="assets\install2.jpg" alt="Install Plugin Step 1" style="max-width:70%; border-radius: 5px;">
     </p>
 
-2.  **Enter Plugin Address:** In the pop-up window, enter the plugin's GitHub address `https://github.com/muyoou/st-memory-enhancement`, then select `Install for all users`.
+2.  **Enter Plugin Address:** In the pop-up window, enter the plugin's GitHub address `https://github.com/fernicar/st-memory-enhancement-English`, then select `Install for all users`.
 
     <p align="center">
         <img src="assets\install3.jpg" alt="Install Plugin Step 2" style="max-width:70%; border-radius: 5px;">
