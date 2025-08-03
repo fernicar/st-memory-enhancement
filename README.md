@@ -58,7 +58,7 @@ The Memory Enhancement Plugin injects powerful **structured long-term memory** i
 *   🚀 **Step-by-Step Operations:** Future integration with primary and secondary APIs will enable intelligent task allocation (generation, organization, reconstruction, etc.), supporting custom trigger timings for efficient memory management.
 
 <p align="center">
-    <img src="https://github.com/user-attachments/assets/36997237-2c72-46b5-a8df-f5af3fa42171" alt="Plugin Interface Example" style="max-width:80%; border-radius: 5px;">
+    <img src="assets\install1.jpg" alt="Plugin Interface Example" style="max-width:80%; border-radius: 5px;">
 </p>
 
 ## 🚀 Quick Start Guide
