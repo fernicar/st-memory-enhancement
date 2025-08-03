@@ -682,4 +682,3 @@ export async function getChatSheetsView(mesId = -1) {
     }
     return await initTableView(mesId);
 }
->>>>>>> REPLACE
