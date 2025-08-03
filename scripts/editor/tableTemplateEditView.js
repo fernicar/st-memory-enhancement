@@ -574,4 +574,3 @@ export async function getEditView(mesId = -1) {
     }
     return await initTableEdit(mesId);
 }
->>>>>>> REPLACE
